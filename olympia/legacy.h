@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include "../../lib/lists.h"
+#include "../lib/lists.h"
 
 /* BUGFIX (modernization): forward declarations */
 struct command;

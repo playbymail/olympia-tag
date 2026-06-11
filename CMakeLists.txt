@@ -204,52 +204,52 @@ endif ()
 # ------------------------------------------------------------------------------
 # TAG olympia (main game engine; no mapgen in this engine)
 # ------------------------------------------------------------------------------
-add_executable(tag-olympia)
-target_sources(tag-olympia
+add_executable(olympia-tag)
+target_sources(olympia-tag
     PRIVATE
-        tag/olympia/add.c tag/olympia/adv.c tag/olympia/alchem.c tag/olympia/art.c
-        tag/olympia/artifacts.c tag/olympia/basic.c tag/olympia/beast.c tag/olympia/build.c
-        tag/olympia/buy.c tag/olympia/c1.c tag/olympia/c2.c tag/olympia/check.c tag/olympia/cloud.c
-        tag/olympia/code.c tag/olympia/combat.c tag/olympia/day.c tag/olympia/dir.c
-        tag/olympia/display.c tag/olympia/eat.c tag/olympia/effect.c tag/olympia/faery.c
-        tag/olympia/garr.c tag/olympia/gate.c tag/olympia/glob.c tag/olympia/gm.c tag/olympia/hades.c
-        tag/olympia/hero.c tag/olympia/immed.c tag/olympia/input.c tag/olympia/io.c
-        tag/olympia/kill.c tag/olympia/loc.c tag/olympia/lore.c tag/olympia/main.c tag/olympia/make.c
-        tag/olympia/map.c tag/olympia/mining.c tag/olympia/move.c tag/olympia/necro.c
-        tag/olympia/npc.c tag/olympia/order.c tag/olympia/perm.c tag/olympia/produce.c
-        tag/olympia/quest.c tag/olympia/ranger.c tag/olympia/relig.c tag/olympia/report.c
-        tag/olympia/savage.c tag/olympia/scry.c tag/olympia/seed.c tag/olympia/shipcraft.c
-        tag/olympia/sout.c tag/olympia/stack.c tag/olympia/stealth.c tag/olympia/storm.c
-        tag/olympia/summary.c tag/olympia/swear.c tag/olympia/times.c tag/olympia/trading.c
-        tag/olympia/u.c tag/olympia/use.c tag/olympia/win.c
-        tag/olympia/z.c
+        olympia/add.c olympia/adv.c olympia/alchem.c olympia/art.c
+        olympia/artifacts.c olympia/basic.c olympia/beast.c olympia/build.c
+        olympia/buy.c olympia/c1.c olympia/c2.c olympia/check.c olympia/cloud.c
+        olympia/code.c olympia/combat.c olympia/day.c olympia/dir.c
+        olympia/display.c olympia/eat.c olympia/effect.c olympia/faery.c
+        olympia/garr.c olympia/gate.c olympia/glob.c olympia/gm.c olympia/hades.c
+        olympia/hero.c olympia/immed.c olympia/input.c olympia/io.c
+        olympia/kill.c olympia/loc.c olympia/lore.c olympia/main.c olympia/make.c
+        olympia/map.c olympia/mining.c olympia/move.c olympia/necro.c
+        olympia/npc.c olympia/order.c olympia/perm.c olympia/produce.c
+        olympia/quest.c olympia/ranger.c olympia/relig.c olympia/report.c
+        olympia/savage.c olympia/scry.c olympia/seed.c olympia/shipcraft.c
+        olympia/sout.c olympia/stack.c olympia/stealth.c olympia/storm.c
+        olympia/summary.c olympia/swear.c olympia/times.c olympia/trading.c
+        olympia/u.c olympia/use.c olympia/win.c
+        olympia/z.c
         lib/checked_alloc.c
         lib/accept_ents.c lib/admits.c lib/cstrings.c lib/effects.c
         lib/entity_builds.c lib/exit_views.c lib/fights.c lib/flag_ents.c
         lib/item_ents.c lib/ilist.c lib/orders.c lib/plist.c lib/req_ents.c
         lib/roads.c lib/skill_ents.c lib/tiles.c lib/trades.c lib/wait_args.c
 )
-target_sources(tag-olympia
+target_sources(olympia-tag
     PRIVATE
     FILE_SET HEADERS
     BASE_DIRS
-        tag/olympia lib
+        olympia lib
     FILES
-        tag/olympia/code.h tag/olympia/combat.h tag/olympia/dir.h tag/olympia/display.h
-        tag/olympia/eat.h tag/olympia/effect.h tag/olympia/etc.h tag/olympia/garr.h
-        tag/olympia/kill.h tag/olympia/legacy.h tag/olympia/loc.h tag/olympia/loop.h
-        tag/olympia/oly.h tag/olympia/oly3.h tag/olympia/order.h tag/olympia/quest.h
-        tag/olympia/relig.h tag/olympia/sout.h tag/olympia/stack.h tag/olympia/swear.h
-        tag/olympia/u.h tag/olympia/use.h tag/olympia/z.h
+        olympia/code.h olympia/combat.h olympia/dir.h olympia/display.h
+        olympia/eat.h olympia/effect.h olympia/etc.h olympia/garr.h
+        olympia/kill.h olympia/legacy.h olympia/loc.h olympia/loop.h
+        olympia/oly.h olympia/oly3.h olympia/order.h olympia/quest.h
+        olympia/relig.h olympia/sout.h olympia/stack.h olympia/swear.h
+        olympia/u.h olympia/use.h olympia/z.h
         lib/checked_alloc.h lib/lists.h
 )
-target_include_directories(tag-olympia PRIVATE tag/olympia/ lib/)
-target_compile_options(tag-olympia PRIVATE -Og -g
+target_include_directories(olympia-tag PRIVATE olympia/ lib/)
+target_compile_options(olympia-tag PRIVATE -Og -g
     -DLINUX -DNEW_TRADE
 )
-legacy_build_flags(tag-olympia)
-phase_1_build_flags(tag-olympia)
-phase_2_build_flags(tag-olympia)
-phase_3_build_flags(tag-olympia)
-phase_4_build_flags(tag-olympia)
-phase_5_build_flags(tag-olympia)
+legacy_build_flags(olympia-tag)
+phase_1_build_flags(olympia-tag)
+phase_2_build_flags(olympia-tag)
+phase_3_build_flags(olympia-tag)
+phase_4_build_flags(olympia-tag)
+phase_5_build_flags(olympia-tag)

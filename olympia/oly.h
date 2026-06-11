@@ -1,5 +1,5 @@
 /* BUGFIX (modernization): update lists to use 64-bit pointers */
-#include "../../lib/lists.h"
+#include "../lib/lists.h"
 /* BUGFIX (modernization): forward declarations are required for varadic functions */
 #include "legacy.h"
 

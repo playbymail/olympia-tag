@@ -1,7 +1,7 @@
 /* BUGFIX (modernization): use an updated malloc/realloc/free */
-#include "../../lib/checked_alloc.h"
+#include "../lib/checked_alloc.h"
 /* BUGFIX (modernization): update lists to use 64-bit pointers */
-#include "../../lib/lists.h"
+#include "../lib/lists.h"
 /* BUGFIX (modernization): forward declarations are required for varadic functions */
 #include "legacy.h"
 

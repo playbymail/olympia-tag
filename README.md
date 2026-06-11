@@ -8,7 +8,7 @@ This repository is a standalone extraction of the TAG engine from the original
 multi-engine Olympia monorepo. It builds on its own with CMake.
 
 The code is legacy K&R-style C originally targeting 32-bit systems. A modernization
-effort is underway to make it compile cleanly on 64-bit systems; `tag-olympia`
+effort is underway to make it compile cleanly on 64-bit systems; `olympia-tag`
 builds clean under the strict C11 flag set plus AddressSanitizer/UBSan.
 
 ## Building
@@ -19,7 +19,7 @@ Requires CMake (>= 4.1), Ninja, and a Clang or GCC toolchain.
 # Configure + build the default (debug) preset
 cmake --preset debug
 cmake --build --preset debug
-# Binary: build/debug/tag-olympia
+# Binary: build/debug/olympia-tag
 ```
 
 Other presets are defined in `CMakePresets.json`:
@@ -44,25 +44,25 @@ cmake --build .
 
 ## Running / golden tests
 
-`run/tag-olympia.sh` extracts the test fixtures (`tests/tag/olympia/fixtures/lib.tgz`)
-into a scratch `run/tag/olympia/lib/` directory and runs the engine in immediate
+`run/olympia-tag.sh` extracts the test fixtures (`tests/olympia/fixtures/lib.tgz`)
+into a scratch `run/olympia/lib/` directory and runs the engine in immediate
 mode to confirm it loads the database and executes.
 
 ```bash
 # Build first (default debug preset), then:
-./run/tag-olympia.sh
+./run/olympia-tag.sh
 ```
 
 The script auto-detects the repo root and looks for the binary at
-`build/<preset>/tag-olympia` (override the preset with `OLYMPIA_PRESET=release ...`).
+`build/<preset>/olympia-tag` (override the preset with `OLYMPIA_PRESET=release ...`).
 
 ## Layout
 
-- `tag/olympia/` — the TAG engine sources and headers
+- `olympia/` — the TAG engine sources and headers
 - `lib/` — shared support code (entity lists, tiles, roads, effects, allocation, …)
-- `tests/tag/` — golden-test fixtures
+- `tests/olympia/` — golden-test fixtures
 - `run/` — run/test driver script and scratch run directory
-- `tag/doc/` — the TAG reference manual (`r.texi`)
+- `doc/` — the TAG reference manual (`r.texi`)
 
 ## License
 
