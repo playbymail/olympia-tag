@@ -21,7 +21,11 @@ engines.
 
 > **One engine binary, no map generator.** Unlike G3 (three targets:
 > `olympia-g3`, `mapgen-g3`, `island-g3`), TAG builds a **single** target,
-> `olympia-tag`. There is no `mapgen/` directory and no map/island generator.
+> `olympia-tag`. There is no `mapgen/` directory and no map/island generator —
+> regenerating a map currently means borrowing `olympia-g3`'s generator (the
+> `run/olympia-tag.sh` `G3_MAPGEN_SEED_*` vars are a vestige of that). Vendoring
+> mapgen into this repo is tracked as **olympia-tag #3** (a separate repo was
+> considered and rejected); it pairs with the golden-gate Step 0.
 
 ## Build
 
