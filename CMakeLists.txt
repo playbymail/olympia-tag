@@ -226,7 +226,7 @@ target_sources(olympia-tag
         lib/checked_alloc.c
         lib/accept_ents.c lib/admits.c lib/cstrings.c lib/effects.c
         lib/entity_builds.c lib/exit_views.c lib/fights.c lib/flag_ents.c
-        lib/item_ents.c lib/ilist.c lib/orders.c lib/plist.c lib/req_ents.c
+        lib/item_ents.c lib/ilist.c lib/orders.c lib/req_ents.c
         lib/roads.c lib/skill_ents.c lib/tiles.c lib/trades.c lib/wait_args.c
 )
 target_sources(olympia-tag
