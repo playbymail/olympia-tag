@@ -765,7 +765,7 @@ gm_land_stats(int pl)
 	for (i = 0; i < ilist_len(l); i++)
 		out(pl, "%10s  %6s  %s",
 		    comma_num(bx[l[i]]->temp),
-		    0,
+		    "",			/* per-region beast count not tracked; see olympia-tag #10 */
 		    just_name(l[i]));
 	out(pl, "%10s  %6s  %s", "======", "======", "");
 	out(pl, "%10s  %6s  %s", comma_num(n_chars), comma_num(n_beasts), "");
