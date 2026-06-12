@@ -682,6 +682,7 @@ write_nations_lists(void)
      *
      */
     if (rp_player(gm_player) &&
+	rp_player(gm_player)->email &&
 	!rp_player(gm_player)->nationlist)
       fprintf(fp,"%s\n",rp_player(gm_player)->email);
     /*
