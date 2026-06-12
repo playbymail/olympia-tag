@@ -557,12 +557,12 @@ gm_show_gate_stats(int pl)
 	out_alt_who = OUT_LORE;
 
 	out(pl, "%d/%d gates found (%d%%)", n_found, n_gates,
-				n_found * 100 / n_gates);
+				n_gates ? n_found * 100 / n_gates : 0);
 	out(pl, "    %d sealed (%d%%), %d notify jump (%d%%), %d notify "
 					"unseal (%d%%)",
-				ngate_seal, ngate_seal * 100 / n_gates,
-				ngate_jump, ngate_jump * 100 / n_gates,
-				ngate_unseal, ngate_unseal * 100 / n_gates);
+				ngate_seal, n_gates ? ngate_seal * 100 / n_gates : 0,
+				ngate_jump, n_gates ? ngate_jump * 100 / n_gates : 0,
+				ngate_unseal, n_gates ? ngate_unseal * 100 / n_gates : 0);
 	out(pl, "");
 
 	out_path = 0;
@@ -624,12 +624,12 @@ gm_show_locs_visited(int pl)
 	out_alt_who = OUT_LORE;
 
 	out(pl, "%d/%d provinces visited (%d%%)", n_prov_visit, n_prov,
-					n_prov_visit * 100 / n_prov);
+					n_prov ? n_prov_visit * 100 / n_prov : 0);
 	out(pl, "%d/%d sublocs visited (%d%%)", n_sub_visit, n_sub,
-					n_sub_visit * 100 / n_sub);
+					n_sub ? n_sub_visit * 100 / n_sub : 0);
 	out(pl, "    %d%% visible, %d%% hidden",
-				vis * 100 / n_sub_visit,
-				hid * 100 / n_sub_visit);
+				n_sub_visit ? vis * 100 / n_sub_visit : 0,
+				n_sub_visit ? hid * 100 / n_sub_visit : 0);
 
 	loop_loc(i)
 	{
@@ -656,10 +656,10 @@ gm_show_locs_visited(int pl)
 	next_loc;
 
 	out(pl, "    %d%% of visisted province's sublocs found",
-				nf * 100 / nt);
+				nt ? nf * 100 / nt : 0);
 	out(pl, "    %d%% visible, %d%% hidden",
-				nf_vis * 100 / nf,
-				nf_hid * 100 / nf);
+				nf ? nf_vis * 100 / nf : 0,
+				nf ? nf_hid * 100 / nf : 0);
 
 	out(pl, "");
 
@@ -700,10 +700,10 @@ gm_loyalty_stats(int pl)
 
 	out(pl, "%d chars: %d oath (%d%%), %d fear (%d%%), %d contract "
 				"(%d%%), %d unsworn (%d%%)",
-			tot, oath, oath * 100 / tot,
-			fear, fear * 100 / tot,
-			cont, cont * 100 / tot,
-			unsw, unsw * 100 /tot);
+			tot, oath, tot ? oath * 100 / tot : 0,
+			fear, tot ? fear * 100 / tot : 0,
+			cont, tot ? cont * 100 / tot : 0,
+			unsw, tot ? unsw * 100 / tot : 0);
 
 	out(pl, "");
 
@@ -1045,6 +1045,7 @@ list_all_items(int pl)
 
 	loop_item(i)
 	{
+	  struct entity_item *it = rp_item(i);
 	  if (item_attack(i)) {
 	    sprintf(buf,"%s (%d,%d,%d)", just_name(i),
 		    item_attack(i), item_defense(i), item_missile(i));
@@ -1054,12 +1055,12 @@ list_all_items(int pl)
 	  out(pl, "%4s %-24s %3d %4d %4d %4d %4d %4d %3s",
 	      box_code_less(i),
 	      buf,
-	      rp_item(i)->maintenance,
+	      it ? it->maintenance : 0,
 	      item_weight(i),
 	      item_land_cap(i),
 	      item_ride_cap(i),
 	      item_fly_cap(i),
-	      rp_item(i)->base_price,
+	      it ? it->base_price : 0,
 	      item_animal(i) ? "yes" : "no"
 	      );
 	}
