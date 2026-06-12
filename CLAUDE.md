@@ -58,24 +58,36 @@ cmake --build .
 
 ## Test — golden snapshots
 
-> **TAG has no golden gate yet — establishing one is Step 0 (see below).** There
-> is only a fixture archive (`tests/olympia/fixtures/lib.tgz`); there is **no**
-> `golden_check.sh` and **no** committed manifest, and the full `-r -S` turn is
-> even **commented out** in `run/olympia-tag.sh` (only the `-i`
-> fixture-extraction phase runs). Before making any change whose contract is
-> "byte-identical output," you must first stand up the gate — copy G3's, re-enable
-> the turn, and pin the report date. See **Step 0** in Modernization status.
+> **The golden gate now exists (Step 0 done).** `tests/olympia/golden_check.sh`
+> hashes `run/olympia/lib` into a sorted sha256 **manifest**
+> (`tests/olympia/golden/manifest.sha256`, committed). The full `-r -S` turn is
+> re-enabled in `run/olympia-tag.sh` and runs with the `test-use-const-report-date`
+> flag so the Olympia Times masthead date is fixed and the manifest is
+> date-independent. Workflow:
+>
+> ```bash
+> ./run/olympia-tag.sh            # extract fixtures (-i), run a full -r -S turn
+> ./tests/olympia/golden_check.sh # prints YES on a byte-identical match
+> ./tests/olympia/golden_check.sh --update   # re-baseline after a deliberate change
+> ```
+>
+> Standing the gate up required fixing the bugs that kept a full turn from
+> completing deterministically — the `float_cloudlands()` hang (#4), the
+> `gm_report()` div-by-zero/null-deref cluster (#5), and a non-deterministic
+> Times-index write (#6). The post-turn DB is now reproducible across clean
+> rebuilds.
 
-Once the gate exists, the contract is the same as the other engines: any change
-must keep it byte-identical, and a deliberate output change is re-baselined in
-the same commit with a note on why.
+The contract is now the same as the other engines: any change must keep the
+manifest byte-identical, and a deliberate output change is re-baselined
+(`golden_check.sh --update`) in the same commit with a note on why.
 
 ## Layout
 
 - `olympia/` — TAG engine sources (63 `.c`) and headers
 - `lib/` — shared support code (entity lists, tiles, roads, allocation, the
   generic `plist`, …)
-- `tests/` — `olympia/fixtures/lib.tgz` (fixture DB); **no golden gate yet**
+- `tests/` — `olympia/fixtures/lib.tgz` (fixture DB) + the golden gate
+  (`olympia/golden_check.sh`, `olympia/golden/manifest.sha256`)
 - `run/` — `olympia-tag.sh` driver + scratch run dir (`run/olympia/lib`)
 - `doc/` — assorted notes (`r.texi`). The modernization **playbook** is *not*
   vendored here — see [Worked examples](#worked-examples--method).
@@ -110,37 +122,37 @@ the same commit with a note on why.
 So, unlike G1/G2/G3, the prototype/declaration work is **done**. The remaining
 runway is short and specific:
 
-1. **Step 0 — establish the golden gate** (prerequisite for everything else).
+1. ~~**Step 0 — establish the golden gate**~~ ✅ **done** (the gate exists; see below).
 2. **Phase 3.6 — audit the typed-list migration, then retire the now-unused `plist`.**
 3. **Check the four issues filed on the G3 repo** against TAG.
 
 Do them in that order: the gate must exist before the plist deletion or any
 issue fix, so byte-identical (or deliberately re-baselined) output can be proven.
 
-### Step 0 — Establish the golden gate (do this FIRST)
+### Step 0 — Golden gate ✅ DONE
 
-1. **Copy the gate.** `../olympia-g3/tests/olympia/golden_check.sh` →
-   `tests/olympia/golden_check.sh`; set `OLYMPIA_ENGINE=tag`,
-   `OLYMPIA_COMMAND=olympia`. It hashes `run/olympia/lib` into a sorted sha256
-   **manifest** (`tests/olympia/golden/manifest.sha256`).
-2. **Re-enable the turn.** Un-comment the `-r -S` block in `run/olympia-tag.sh`
-   (currently lines ~127–138) so the driver runs a full turn and leaves the
-   post-turn DB in `run/olympia/lib`.
-3. **Pin the report date** *before* baselining. TAG's "Olympia Times" masthead
-   uses the wall-clock date (`times.c` ~lines 128–131: `time()`/`localtime()` →
-   `months[tm->tm_mon] …`), so `run/olympia/lib/times_0` embeds *today's* date
-   and the manifest would only match on the day it was captured. Port G3's
-   **`test-use-const-report-date`** flag (G3 commit `dfd668c`): a global set by a
-   long-form arg that `main()` pulls out of `argv` *before* `getopt()`, then
-   `times.c` emits a fixed date when it's set. Pass the flag on the turn run in
-   `run/olympia-tag.sh`.
-4. **Baseline on the pristine tree.** Build, run `-i` then the turn, and
-   `golden_check.sh --update`. Re-run across two clean rebuilds to learn TAG's
-   inherent determinism (the debug build is sanitized — confirm sanitizer output
-   doesn't perturb the `lib/` files, and that two clean runs agree).
+The gate is established and green. `tests/olympia/golden_check.sh` (adapted from
+G3) hashes `run/olympia/lib` into a sorted sha256 **manifest**
+(`tests/olympia/golden/manifest.sha256`, committed). The full `-r -S` turn is
+re-enabled in `run/olympia-tag.sh` and runs with the **`test-use-const-report-date`**
+flag (ported from G3 commit `dfd668c`: a global pulled out of `argv` by `main()`
+*before* `getopt()`, which makes `times.c` emit a fixed masthead date) so the
+manifest is date-independent. Two clean rebuilds produce a byte-identical
+post-turn DB — `golden_check.sh` prints `YES`.
 
-See the playbook's **"Verification gate"** section for the date trap and the
-same-session-baseline technique.
+Standing it up was **not** a pure copy of G3's gate: TAG's `-r -S` turn had never
+run to completion, and re-enabling it surfaced three never-exercised defects that
+had to be fixed first (all re-baselined with the gate):
+
+- **#4** `float_cloudlands()` infinite placement loop (`cloud.c`) — the turn hung
+  here, so nothing past it had ever executed.
+- **#5** `gm_report()` div-by-zero + null-deref cluster (`gm.c`) — the GM stats
+  reports (`main.c:420`, every turn) had never run.
+- **#6** Times-index `%02d` missing-argument write (`times.c:504`) — the one
+  non-deterministic file (garbage vararg) standing between two clean runs.
+
+To re-baseline after a deliberate output change: `./run/olympia-tag.sh` then
+`./tests/olympia/golden_check.sh --update`, committed with a note.
 
 ### Phase 3.6 — Audit the typed-list migration, then retire the unused `plist`
 

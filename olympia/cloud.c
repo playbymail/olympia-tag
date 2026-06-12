@@ -12,6 +12,13 @@ int cloud_region = 0;
 #define	SZ	4
 
 /*
+ *  Max attempts to float the cloudlands onto a valid box before we
+ *  give up and leave it where it was.  Without a cap the placement
+ *  loop in float_cloudlands() random-walks forever on a sparse map.
+ */
+#define	CLOUD_FLOAT_TRIES	100
+
+/*
  *	%%%%
  *	%*%%	*=Nimbus
  *	%^%*	*=Aerovia	^=Mt. Olympus link
@@ -281,32 +288,54 @@ float_cloudlands(void)
    *  This causes a problem if there's a hole in the map right
    *  here (when we try to save the DB).  So let's loop and make
    *  sure we don't use an offset that causes a hole.
+   *
+   *  We sample each candidate from the original base (bx,by)
+   *  rather than walking x/y cumulatively, and we cap the retry:
+   *  rc_to_region() never checks the box exists, so on a sparse
+   *  map an unbounded cumulative walk never lands on a valid box
+   *  and hangs the turn.  If nothing valid turns up nearby we fall
+   *  back to the original position.
    */
-  do {
-    /*
-     *  Now calculate the offsets.
-     *
-     */
-    y_off = rnd(1,7) - 3;
-    x_off = rnd(1,7) - 3;
+  {
+    int base_x = x, base_y = y, tries;
+
+    for (tries = 0; tries < CLOUD_FLOAT_TRIES; tries++) {
+      /*
+       *  Now calculate the offsets.
+       *
+       */
+      y_off = rnd(1,7) - 3;
+      x_off = rnd(1,7) - 3;
+
+      /*
+       *  Check for "wrap".
+       *
+       *  Wed Oct  7 19:25:13 1998 -- Scott Turner
+       *
+       *  This really needs to be the size of the world!
+       */
+      x = (base_x + x_off + xsize) % xsize;
+      y = (base_y + y_off + ysize ) % ysize;
+
+      /*
+       *  So now change the "where" of the cloud_region.  We don't
+       *  use "set_where" since it's not really there :-).
+       *
+       */
+      p_loc_info(cloud_region)->where = rc_to_region(y,x);
+      if (valid_box(p_loc_info(cloud_region)->where)) break;
+    }
 
     /*
-     *  Check for "wrap".
-     *
-     *  Wed Oct  7 19:25:13 1998 -- Scott Turner
-     *
-     *  This really needs to be the size of the world!
+     *  No valid box in the neighborhood -- leave the cloudlands
+     *  where it was rather than spin forever.
      */
-    x = (x + x_off + xsize) % xsize;
-    y = (y + y_off + ysize ) % ysize;
-  
-    /*
-     *  So now change the "where" of the cloud_region.  We don't
-     *  use "set_where" since it's not really there :-).
-     *
-     */
-    p_loc_info(cloud_region)->where = rc_to_region(y,x);
-  } while (!valid_box(p_loc_info(cloud_region)->where));
+    if (tries >= CLOUD_FLOAT_TRIES) {
+      x = base_x;
+      y = base_y;
+      p_loc_info(cloud_region)->where = rc_to_region(y,x);
+    }
+  }
 
   fprintf(stderr,"Cloudlands floating (%d, %d).\n",x_off,y_off);
   /*

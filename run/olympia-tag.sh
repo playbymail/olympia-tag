@@ -123,17 +123,19 @@ export G3_MAPGEN_SEED_3=26982
 }
 echo " info: command thinks that it ran successfully"
 
-#############################################################################
-## run a turn and update the data store (the flat files in ./lib)
-#touch .olympia.before
-#rm -rf lib-before lib-after
-#cp -a lib lib-before
-#"${OLYMPIA_BIN}/${OLYMPIA_COMMAND}-${OLYMPIA_ENGINE}" -r -l ./lib -S </dev/null || {
-#  echo "error: ${OLYMPIA_COMMAND}-${OLYMPIA_ENGINE} failed"
-#  exit 2
-#}
-#echo " info: command thinks that it ran successfully"
-#echo "       find lib -type f -newer .olympia.before | sort"
-#echo "       diff -ru lib-before lib"
+############################################################################
+# run a turn and update the data store (the flat files in ./lib)
+touch .olympia.before
+rm -rf lib-before lib-after
+cp -a lib lib-before
+# test-use-const-report-date: fix the Olympia Times masthead date so the golden
+# manifest is deterministic across days (otherwise times_0 embeds today's date).
+"${OLYMPIA_BIN}/${OLYMPIA_COMMAND}-${OLYMPIA_ENGINE}" -r -l ./lib -S test-use-const-report-date </dev/null || {
+  echo "error: ${OLYMPIA_COMMAND}-${OLYMPIA_ENGINE} failed"
+  exit 2
+}
+echo " info: command thinks that it ran successfully"
+echo "       find lib -type f -newer .olympia.before | sort"
+echo "       diff -ru lib-before lib"
 
 exit 0
