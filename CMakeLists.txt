@@ -244,6 +244,9 @@ target_sources(olympia-tag
         lib/checked_alloc.h lib/lists.h
 )
 target_include_directories(olympia-tag PRIVATE olympia/ lib/)
+# Declare the C11 requirement at the target level (the project-level
+# CMAKE_C_STANDARD above stays as the default for any future targets).
+target_compile_features(olympia-tag PRIVATE c_std_11)
 target_compile_options(olympia-tag PRIVATE -Og -g
     -DLINUX -DNEW_TRADE
 )
