@@ -105,6 +105,14 @@ manifest byte-identical, and a deliberate output change is re-baselined
   **all of them are actually called** on `olympia-tag` (`CMakeLists.txt`
   ~lines 250–255) — unlike G3, where most `phase_*` functions were defined but
   unused scaffolding.
+- **C11 standard** is set both project-wide (`CMAKE_C_STANDARD 11` /
+  `…_REQUIRED ON` / `CMAKE_C_EXTENSIONS OFF`, lines 4–6) *and* declared
+  explicitly on the `olympia-tag` target via
+  `target_compile_features(olympia-tag PRIVATE c_std_11)` (issue #11, merged in
+  #13). The per-target call is documentation/intent only — inert because the
+  global standard already forces `-std=c11`; it guards against divergence if new
+  targets are added. Mirrors the same change in siblings `../olympia-g1` /
+  `../olympia-g2` / `../olympia-g3`. Not part of the 64-bit modernization effort.
 
 ## Modernization status
 
