@@ -117,7 +117,7 @@ manifest byte-identical, and a deliberate output change is re-baselined
 ## Modernization status
 
 **TAG is already through Phase 5.** All of the following are `-Werror` on
-`olympia-tag` and measure **0** in a clean build (82 TUs, verified):
+`olympia-tag` and measure **0** in a clean build (81 TUs, verified):
 
 | Phase | Scope | State |
 |-------|-------|-------|
