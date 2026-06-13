@@ -10,6 +10,17 @@ set -euo pipefail
 # sorted. That captures every byte of every file in a small, diffable artifact.
 # Any content change anywhere shows up as a manifest line that no longer matches.
 #
+# NOT affected by the openrsync dry-run blind spot (issue #7, origin
+# playbymail/olympia-g1#4): an earlier harness style compared run output to a
+# committed golden tree with `rsync -a -n -c --delete`. On macOS /usr/bin/rsync
+# is openrsync, which in dry-run (-n) does NOT honor -c (checksum) and falls back
+# to a size+mtime quick-check — so any equal-size content change (e.g. the
+# fixed-width Olympia Times masthead date) passed UNDETECTED, printing a false
+# YES. This gate never used rsync: it hashes every byte of every file with
+# sha256, which is portable across macOS/Linux and cannot be fooled by same-size
+# edits. Verified on this repo: openrsync's `-n -c` lists nothing for a same-size
+# byte change, while this gate correctly flips to NO for the same edit.
+#
 # Workflow:
 #   1. ./run/olympia-tag.sh           # extract fixtures, run a full -r -S turn,
 #                                     # leaving the post-turn DB in run/olympia/lib
