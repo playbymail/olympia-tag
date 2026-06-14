@@ -355,6 +355,9 @@ wilderness_attack_check(int who, int where)
  *  Don't execute LOY_unsworn/indep_player nobles (e.g., hostages)
  *
  */
+static void execute_prisoners(int who, char *reason)
+	__attribute__((format(printf, 2, 0)));
+
 static void
 execute_prisoners(int who, char *reason)
 {
@@ -364,12 +367,20 @@ execute_prisoners(int who, char *reason)
   loop_here(who, pris) {
     if (is_prisoner(pris) && (loyal_rate(pris) != LOY_unsworn ||
 	player(pris) != indep_player)) {
+      /* #24: reason is a caller-supplied literal format (validated by the
+       * prototype's format attribute); non-literal only at this forward. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
       wout(viewloc(subloc(who)),reason,box_name(who), box_name(pris));
+#pragma GCC diagnostic pop
       queue(who,"execute %s", box_code_less(pris));
     };
   } next_here;
 
 };
+
+static void release_prisoners(int who, char *reason)
+	__attribute__((format(printf, 2, 0)));
 
 static void
 release_prisoners(int who, char *reason)
@@ -379,7 +390,12 @@ release_prisoners(int who, char *reason)
   
   loop_here(who, pris) {
     if (is_prisoner(pris)) {
+      /* #24: reason is a caller-supplied literal format (validated by the
+       * prototype's format attribute); non-literal only at this forward. */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
       wout(viewloc(subloc(who)),reason,box_name(who),box_name(pris));
+#pragma GCC diagnostic pop
       queue(who,"unstack %s",box_code_less(pris));
       found = 1;
     };

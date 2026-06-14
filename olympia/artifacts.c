@@ -1146,9 +1146,20 @@ describe_combat_artifact(int who, int target, const char *header)
   buf = sout("%s %s",
 	     header,
 	     artifact_names[rp_item_artifact(target)->type]);
+  /*
+   *  #24: `buf` is a non-literal format only because it is assembled at
+   *  runtime -- it is built entirely from trusted internal constants (the
+   *  `header` literal plus an `artifact_names[]` template that carries the
+   *  %d/%s specifiers), never from player data, and the caller supplies the
+   *  args the template expects.  Suppress -Wformat-nonliteral locally rather
+   *  than duplicate every per-type template as an inline literal.
+   */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   wout(who,buf,
        rp_item_artifact(target)->param1,
        total);
+#pragma GCC diagnostic pop
 };
 
 /*
@@ -1173,6 +1184,16 @@ artifact_identify(const char *header, struct command *c)
 	   header,
 	   artifact_names[rp_item_artifact(target)->type]);
 
+  /*
+   *  #24: every `wout(c->who, f, ...)` below uses `f`, the non-literal format
+   *  assembled above from the `header` literal and an `artifact_names[]`
+   *  template (which carries the %d/%s specifiers).  It is built from trusted
+   *  internal constants, never player data, and each switch case supplies
+   *  exactly the args its template expects.  Suppress -Wformat-nonliteral for
+   *  the switch rather than duplicate every template as an inline literal.
+   */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   switch(rp_item_artifact(target)->type) {
   case ART_COMBAT:
     describe_combat_artifact(c->who, target, header);
@@ -1274,6 +1295,7 @@ artifact_identify(const char *header, struct command *c)
 	 rp_item_artifact(target)->param2,
 	 rp_item_artifact(target)->uses);
   };
+#pragma GCC diagnostic pop
   return TRUE;
 }
 

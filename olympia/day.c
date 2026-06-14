@@ -706,6 +706,9 @@ increment_current_aura(void)
  *  Updated to handle any monster types...
  *
  */
+static void lose_monsters(int mtype, char *msg, int max_loss, int chance)
+	__attribute__((format(printf, 2, 0)));
+
 static void
 lose_monsters(int mtype, char *msg, int max_loss, int chance)
 {
@@ -744,7 +747,15 @@ lose_monsters(int mtype, char *msg, int max_loss, int chance)
      *
      */
     consume_item(who, mtype, loss);
+    /*
+     *  #24: msg is a caller-supplied *literal* format (validated by the
+     *  format attribute on the prototype above); it is non-literal only at
+     *  this forwarding site, which clang won't auto-suppress.
+     */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
     wout(who, msg, cap(nice_num(loss)), plural_item_name(mtype,loss), (loss > 1) ? "" : "s");
+#pragma GCC diagnostic pop
     
   } next_char;
 }
