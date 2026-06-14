@@ -113,6 +113,8 @@ manifest byte-identical, and a deliberate output change is re-baselined
   global standard already forces `-std=c11`; it guards against divergence if new
   targets are added. Mirrors the same change in siblings `../olympia-g1` /
   `../olympia-g2` / `../olympia-g3`. Not part of the 64-bit modernization effort.
+- **No CI.** Both golden gates are run locally (maintainer decision); warning
+  enforcement is not wired into CI.
 
 ## Modernization status
 
