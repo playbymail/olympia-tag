@@ -5,92 +5,72 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-function(legacy_build_flags tgt)
-    # Flags to hide legacy code warnings.
-    # We'll need to roll some of these back when we're updating the code to run as 64-bit.
+# =============================================================================
+# Compiler-flag conventions (read before "tidying up" this file)
+# =============================================================================
+# The 32->64-bit modernization ladder is partway done. Phases 1-5 were triaged
+# to ZERO and locked as errors; Phases 6-10 (shorten-64-to-32, sign-conversion,
+# return-type/return-mismatch, the format family, implicit-int-conversion) are
+# still suppressed and will be locked one phase at a time. See CLAUDE.md
+# "Modernization status" and doc/modernization-64bit-plan.md.
+#
+# 1. Enforced classes are written as an explicit pair, one class per line:
+#        -Wfoo -Werror=foo
+#    The bare -Wfoo is technically redundant (-Werror=foo already enables it),
+#    but the pair is deliberate: it records that the class was driven to zero
+#    and locked. Do NOT collapse these to bare -Werror=foo.
+#
+# 2. -Wno-foo suppressions are legacy idioms this ~80K-line codebase still
+#    relies on, or warning classes not yet chased down (the Phase 6-10 set).
+#
+# The shared warning set is applied to the single olympia-tag target via
+# olympia_compile_flags(), with optional sanitizers via
+# olympia_enable_sanitizers() (the asan-ubsan preset sets OLYMPIA_SANITIZE=ON).
+# Optimization level is owned by the build type / preset (debug -> -O0 -g,
+# release -> -O3 -DNDEBUG, asan-ubsan -> -O1 -g via its preset override), NOT
+# pinned per target.
+# =============================================================================
+
+option(OLYMPIA_SANITIZE "Enable sanitizer instrumentation" OFF)
+set(OLYMPIA_SANITIZERS "address,undefined" CACHE STRING "Comma-separated sanitizers, e.g. address,undefined")
+
+# All shared engine warning flags, applied to the olympia-tag target.
+# Optimization is owned by the build type / preset (see the conventions block).
+function(olympia_compile_flags tgt)
     target_compile_options(${tgt} PRIVATE
+        # --- Suppressions: legacy idioms left as-is ---
         -Wno-comment
         -Wno-compare-distinct-pointer-types
         -Wno-dangling-else
         -Wno-deprecated-declarations
         -Wno-deprecated-non-prototype
         -Wno-extra-tokens
-        -Wno-format
-        -Wno-format-security
-        -Wno-implicit-function-declaration
         -Wno-incompatible-library-redeclaration
-        -Wno-incompatible-pointer-types
-        -Wno-int-conversion
-        -Wno-int-to-pointer-cast
         -Wno-logical-not-parentheses
         -Wno-macro-redefined
         -Wno-multichar
         -Wno-non-literal-null-conversion
         -Wno-parentheses
-        -Wno-pointer-to-int-cast
-        -Wno-return-mismatch
-        -Wno-return-type
-        -Wno-sizeof-pointer-memaccess
         -Wno-tautological-constant-out-of-range-compare
+
+        # --- Not yet chased down: Phases 6-10 of the ladder (still suppressed) ---
+        -Wno-sizeof-pointer-memaccess  # Phase 6 (#17)
+        -Wno-return-type               # Phase 8 (#19)
+        -Wno-return-mismatch           # Phase 8 (#19)
+        -Wno-format                    # Phase 9 (#12)
+        -Wno-format-security           # Phase 9 (#12)
+
+        # --- Modernization classes triaged to 0 and locked (CLAUDE.md) ---
+        -Wint-to-pointer-cast -Werror=int-to-pointer-cast                # Phase 1
+        -Wpointer-to-int-cast -Werror=pointer-to-int-cast                # Phase 1
+        -Wincompatible-pointer-types -Werror=incompatible-pointer-types  # Phase 2
+        -Wint-conversion -Werror=int-conversion                          # Phase 3
+        -Wstrict-prototypes -Werror=strict-prototypes                    # Phase 4
+        -Wmissing-prototypes -Werror=missing-prototypes                  # Phase 4
+        -Wimplicit-function-declaration -Werror=implicit-function-declaration  # Phase 4
+        -Wmissing-declarations -Werror=missing-declarations              # Phase 5
     )
 endfunction()
-
-function(phase_1_build_flags tgt)
-    # i/pointer lists triage - only pointer-cast errors.
-    target_compile_options(${tgt} PRIVATE
-        -Wint-to-pointer-cast -Werror=int-to-pointer-cast
-        -Wpointer-to-int-cast -Werror=pointer-to-int-cast
-    )
-endfunction()
-
-function(phase_2_build_flags tgt)
-    # incompatible pointer types
-    target_compile_options(${tgt} PRIVATE
-        -Wincompatible-pointer-types -Werror=incompatible-pointer-types
-    )
-endfunction()
-
-function(phase_3_build_flags tgt)
-    # integer conversions
-    target_compile_options(${tgt} PRIVATE
-        -Wint-conversion -Werror=int-conversion
-    )
-endfunction()
-
-function(phase_4_build_flags tgt)
-    # forward declarations; start turning on errors
-    target_compile_options(${tgt} PRIVATE
-        -Wmissing-prototypes -Werror=missing-prototypes
-        -Wstrict-prototypes -Werror=strict-prototypes
-        -Wimplicit-function-declaration -Werror=implicit-function-declaration
-    )
-endfunction()
-
-function(phase_5_build_flags tgt)
-    # C11's enabled, sanitizers enabled
-    target_compile_options(${tgt} PRIVATE
-        -Wmissing-declarations -Werror=missing-declarations
-        # string literal to char* is a classic legacy footgun
-        #-Wwrite-strings #-Werror=write-strings
-        -fno-common
-        -fno-omit-frame-pointer
-        -fno-optimize-sibling-calls
-        -fsanitize=address,undefined
-        -fno-sanitize-recover=all
-    )
-    target_link_options(${tgt} PRIVATE
-        -fno-common
-        -fno-omit-frame-pointer
-        -fno-optimize-sibling-calls
-        -fsanitize=address,undefined
-        -fno-sanitize-recover=all
-    )
-endfunction()
-
-option(OLYMPIA_SANITIZE "Enable sanitizer instrumentation" OFF)
-set(OLYMPIA_SANITIZERS "" CACHE STRING "Comma-separated sanitizers, e.g. address,undefined"
-    address,undefined
-)
 
 function(olympia_enable_sanitizers tgt)
     if(NOT OLYMPIA_SANITIZE)
@@ -130,49 +110,6 @@ function(olympia_enable_sanitizers tgt)
         message(WARNING "OLYMPIA_SANITIZE is ON but compiler is not Clang/GNU; sanitizers not enabled.")
     endif()
 endfunction()
-
-# Engine-specific flags to hide legacy code warnings. We'll need to roll
-# some of these back when we're updating the code to run as 64-bit.
-set(LEGACY_C_FLAGS
-        -Wno-comment
-        -Wno-compare-distinct-pointer-types
-        -Wno-dangling-else
-        -Wno-deprecated-declarations
-        -Wno-deprecated-non-prototype
-        -Wno-extra-tokens
-        -Wno-format
-        -Wno-format-security
-        -Wno-implicit-function-declaration
-        -Wno-incompatible-library-redeclaration
-        -Wno-incompatible-pointer-types
-        -Wno-int-conversion
-        -Wno-int-to-pointer-cast
-        -Wno-logical-not-parentheses
-        -Wno-macro-redefined
-        -Wno-multichar
-        -Wno-non-literal-null-conversion
-        -Wno-parentheses
-        -Wno-pointer-to-int-cast
-        -Wno-return-mismatch
-        -Wno-return-type
-        -Wno-sizeof-pointer-memaccess
-        -Wno-tautological-constant-out-of-range-compare
-)
-
-# Create a stricter set of compiler flags to catch
-set(LEGACY_C_FLAGS_STRICT
-        ${LEGACY_C_FLAGS}
-)
-
-# Remove suppressions that hide 64-bit hazards
-list(REMOVE_ITEM LEGACY_C_FLAGS_STRICT
-        -Wno-int-conversion
-        -Wno-int-to-pointer-cast
-        -Wno-pointer-to-int-cast
-        -Wno-implicit-function-declaration
-        -Wno-return-mismatch
-        -Wno-return-type
-)
 
 # ------------------------------------------------------------------------------
 # 32-bit build support
@@ -247,12 +184,9 @@ target_include_directories(olympia-tag PRIVATE olympia/ lib/)
 # Declare the C11 requirement at the target level (the project-level
 # CMAKE_C_STANDARD above stays as the default for any future targets).
 target_compile_features(olympia-tag PRIVATE c_std_11)
-target_compile_options(olympia-tag PRIVATE -Og -g
-    -DLINUX -DNEW_TRADE
-)
-legacy_build_flags(olympia-tag)
-phase_1_build_flags(olympia-tag)
-phase_2_build_flags(olympia-tag)
-phase_3_build_flags(olympia-tag)
-phase_4_build_flags(olympia-tag)
-phase_5_build_flags(olympia-tag)
+# Engine-specific defines (optimization/-g is owned by the build type / preset).
+target_compile_options(olympia-tag PRIVATE -DLINUX -DNEW_TRADE)
+olympia_compile_flags(olympia-tag)
+
+# Optional ASan/UBSan via the asan-ubsan preset (OLYMPIA_SANITIZE=ON).
+olympia_enable_sanitizers(olympia-tag)

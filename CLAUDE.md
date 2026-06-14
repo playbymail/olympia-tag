@@ -39,12 +39,14 @@ cmake --build --preset debug
 
 Presets (`CMakePresets.json`): `debug` (default), `release`, `asan-ubsan`.
 
-> **The default `debug` build already runs under ASan/UBSan.** TAG's
-> `phase_5_build_flags()` is applied unconditionally to `olympia-tag` (see
-> `CMakeLists.txt` ~line 255), so `-fsanitize=address,undefined` is baked into
-> the ordinary debug binary — you do *not* need the `asan-ubsan` preset to get
-> sanitizer coverage (it exists for parity with the sibling repos). Expect
-> sanitizer output on stderr when you run the engine.
+> **The `debug` build is a plain, non-instrumented build; use the `asan-ubsan`
+> preset for sanitizer coverage.** As of Step A (#16), instrumentation flows
+> only through `olympia_enable_sanitizers()`, which is gated on `OLYMPIA_SANITIZE`
+> — set ON only by the `asan-ubsan` preset. So `debug` builds fast at `-O0 -g`
+> with no `-fsanitize`, and you must build/run the `asan-ubsan` preset (which
+> sets `OLYMPIA_SANITIZE=ON`, `-O1 -g`) to get ASan/UBSan. Run the sanitized
+> engine with `OLYMPIA_PRESET=asan-ubsan ./run/olympia-tag.sh`; expect sanitizer
+> output on stderr there, not from the ordinary `debug` binary.
 
 ### 32-bit build (Linux only — for regenerating golden files)
 
@@ -100,11 +102,13 @@ manifest byte-identical, and a deliberate output change is re-baselined
   changes (dead-code removal, list-type audits) must produce byte-identical
   output; a deliberate behavior change is re-baselined in the same commit with a
   note.
-- Build config lives in `CMakeLists.txt`. Enforcement is via the
-  `legacy_build_flags()` + `phase_1..5_build_flags()` functions, and on TAG
-  **all of them are actually called** on `olympia-tag` (`CMakeLists.txt`
-  ~lines 250–255) — unlike G3, where most `phase_*` functions were defined but
-  unused scaffolding.
+- Build config lives in `CMakeLists.txt`. As of Step A (#16) enforcement is via
+  a single consolidated `olympia_compile_flags()` helper applied to
+  `olympia-tag`; sanitizers are wired separately through
+  `olympia_enable_sanitizers()` (gated on `OLYMPIA_SANITIZE`, set ON only by the
+  `asan-ubsan` preset). The old `legacy_build_flags()` + `phase_1..5_build_flags()`
+  blocks and the dead `LEGACY_C_FLAGS*` scaffolding were folded into the one
+  helper and deleted.
 - **C11 standard** is set both project-wide (`CMAKE_C_STANDARD 11` /
   `…_REQUIRED ON` / `CMAKE_C_EXTENSIONS OFF`, lines 4–6) *and* declared
   explicitly on the `olympia-tag` target via
@@ -127,7 +131,7 @@ manifest byte-identical, and a deliberate output change is re-baselined
 | 2 | `incompatible-pointer-types` | ✅ enforced |
 | 3 | `int-conversion` | ✅ enforced |
 | 4 | `strict-prototypes`, `missing-prototypes`, `implicit-function-declaration` | ✅ enforced (prototypes live in per-module headers; there is **no** generated `proto.h`, and there are **0** K&R/empty-paren defs) |
-| 5 | `missing-declarations` + ASan/UBSan | ✅ `missing-declarations` enforced; ASan/UBSan baked into the debug build |
+| 5 | `missing-declarations` + ASan/UBSan | ✅ `missing-declarations` enforced; ASan/UBSan available via the `asan-ubsan` preset (`OLYMPIA_SANITIZE=ON`) |
 
 So, unlike G1/G2/G3, the prototype/declaration work is **done**. The remaining
 runway is short and specific:
@@ -191,7 +195,8 @@ inventory `qsort`. Before you delete anything:
     matching `*_len`/`*_clear`/`*_reclaim`.
   - inventory/sort sites (e.g. `report.c` qsort lengths) — confirm the `*_len`
     matches the list's real element type.
-  - Run the turn under the (default) ASan/UBSan build — a wrong-header over-read
+  - Run the turn under the `asan-ubsan` preset
+    (`OLYMPIA_PRESET=asan-ubsan ./run/olympia-tag.sh`) — a wrong-header over-read
     trips the sanitizer.
 - **Then delete:** `lib/plist.c`, the `typedef void **plist` and the `plist_*`
   decls in `lib/lists.h`, and the `lib/plist.c` entry in the `olympia-tag`
@@ -216,13 +221,14 @@ agent should check each against TAG (read the full bodies with
 |----------|-----------------|--------------------|
 | **#1** startup segfault (`plist` queried as `ilist` in `post_production`/`location_trades`) | **Likely NO** | TAG's turn already runs to completion under ASan with no crash, and `plist` is unused. Treat as *verify-only*: the Phase 3.6 audit above is the confirmation. |
 | **#2** retire the generic `plist` | **YES — but trivial** | This *is* Phase 3.6 above. On TAG it's an audit + dead-file delete, not G3's field-by-field migration (which TAG already effectively has). |
-| **#3** `month_names[]` out-of-bounds read in the masthead (ASan global-buffer-overflow) | **YES — confirmed latent** (tracked as **olympia-tag #1**) | `times_masthead()` (`times.c:144`/`149`) reads `month_names[oly_month(sysclock)]`; `oly_month(a) == ((a).turn-1) % 8`, so at **turn 0** it is `-1` → `month_names[-1]` (array is 8 entries + `NULL` at `glob.c:446`). The shipped fixture is turn 1, so `oly_month()==0` and the default ASan `-i` run does *not* fire — but the defect is present. Reproduce on a turn-0 DB; fix by guarding the index against turn 0/negative before indexing. |
+| **#3** `month_names[]` out-of-bounds read in the masthead (ASan global-buffer-overflow) | **YES — confirmed latent** (tracked as **olympia-tag #1**) | `times_masthead()` (`times.c:144`/`149`) reads `month_names[oly_month(sysclock)]`; `oly_month(a) == ((a).turn-1) % 8`, so at **turn 0** it is `-1` → `month_names[-1]` (array is 8 entries + `NULL` at `glob.c:446`). The shipped fixture is turn 1, so `oly_month()==0` and the `asan-ubsan` `-i` run does *not* fire — but the defect is present. Reproduce on a turn-0 DB; fix by guarding the index against turn 0/negative before indexing. |
 | **#4** `construct_guard_fight_list` compares `fight *` pointers to an `int` box-id (guard never fires) | **YES — present** (tracked as **olympia-tag #2**) | `combat.c:1113`: `if (fights_lookup(l_a, (struct fight *)((long)i)) >= 0)` — compares element pointers to a box-id cast to a pointer, so the lookup always returns `-1` and the "don't count a guarding unit already in `l_a`" guard never fires. Fix = a `l_a[j]->unit == i` membership scan (`struct fight` has `int unit`). This **changes combat resolution → changes golden output**, so do it **after** the gate exists and re-baseline with a note. |
 
 ### Phase 5 — already enforced
 
-`-Werror=missing-declarations` is on and measures 0, and ASan/UBSan run in the
-default debug build. The live work here is reactive: chase any ASan/UBSan finding
+`-Werror=missing-declarations` is on and measures 0, and ASan/UBSan run via the
+`asan-ubsan` preset (`OLYMPIA_PRESET=asan-ubsan ./run/olympia-tag.sh`). The live
+work here is reactive: chase any ASan/UBSan finding
 that surfaces during the turn, and keep the sanitizer-clean property as you do
 Phase 3.6 and the issue fixes. One memory-safety defect is already tracked —
 **olympia-tag #1** (`month_names[-1]` at turn 0; latent with the turn-1 fixture,
@@ -243,8 +249,8 @@ It is **not** vendored into this repo — read it there, or copy it into TAG's
 `Phase 4:` / `test-use-const-report-date` commits are the closest worked example.
 
 **But re-probe; don't assume sibling parity.** TAG already differs from G3 in
-ways that matter: one target (no mapgen/island), sanitizers in the *default*
-build, `plist` already unused, prototypes via per-module headers (no `proto.h`),
+ways that matter: one target (no mapgen/island), sanitizers gated on the
+`asan-ubsan` preset, `plist` already unused, prototypes via per-module headers (no `proto.h`),
 and `effects.c`/`entity_builds.c` **live** here though dead in G3. Every engine
 in this lineage has quietly diverged from its sibling — verify TAG's actual state
 (build it, grep it, run it under ASan) rather than porting assumptions.
