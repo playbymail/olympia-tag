@@ -386,6 +386,53 @@ This is exactly the method the Phase 1–10 ladder used.
    `if (CMAKE_C_COMPILER_ID MATCHES "Clang")` so GCC keeps building with no
    coverage lost.
 
+### Baseline set `-Wall -Wextra -Wpedantic`: evaluated, deliberately not adopted
+
+Issue #14 proposed enabling the broad `-Wall -Wextra -Wpedantic` baseline across
+the target. It was **evaluated by building** (Apple clang, keep-going, layered on
+the locked ladder) and **deliberately not baked into the build**. Adding the
+broad set surfaced **687 diagnostics across 11 classes** — **none** overlapping
+the Phase 1–10 ladder and **none** an error (the locked classes are at zero). The
+inventory (deduped by `file:line:col`):
+
+| Class | Hits | Kind | Disposition |
+|-------|------|------|-------------|
+| `-Wextra-semi` | 337 | style (stray `;`) | informational |
+| `-Wunused-variable` | 204 | dead code | informational |
+| `-Wunused-parameter` | 44 | style (dispatch-table sigs) | informational |
+| `-Wunused-but-set-variable` | 32 | dead code | informational |
+| `-Wchar-subscripts` | 21 | **portability** (signed `char` index) | **candidate → #27** |
+| `-Wunused-function` | 20 | dead code | informational |
+| `-Wmissing-field-initializers` | 12 | benign (zero-init) | informational |
+| `-Wuninitialized` | 8 | **correctness** (UB) | **candidate → #26** |
+| `-Wsign-compare` | 5 | low (intent already covered by locked `sign-conversion`) | informational |
+| `-Wsometimes-uninitialized` | 3 | **correctness** (2 real defects) | **candidate → #26** |
+| `-Wpedantic` | 1 | ISO C nit | informational |
+
+**Decision.** The selected baseline *is* the targeted ratchet set in
+`olympia_compile_flags()` — not the broad `-Wall/-Wextra/-Wpedantic`. Baking the
+broad set in would add ~687 unenforced informational lines to **every** build,
+burying the locked-class signal, while the ratchet already promotes high-value
+classes individually. So the broad flags stay **off**; the value of the
+evaluation is the inventory above, not a flag change. (Consistent with #14's
+non-goals: no warning-free-build requirement, no global `-Werror`.) Because no
+build flag changed, this evaluation has **no golden impact** and needed no flag-flip
+commit.
+
+**Promotion candidates identified** (high-value classes worth a future ratchet
+pass, each its own focused issue):
+
+- **#26** — `-Wuninitialized` / `-Wsometimes-uninitialized`: 2 confirmed real
+  uninitialized reads (`build.c:1440` partial-build `id`; `use.c:1310` dispatch
+  `ret`) plus a maybe-uninitialized set to audit.
+- **#27** — `-Wchar-subscripts`: signed-`char` array indices in `z.c`/`code.c`
+  (latent OOB on high-bit bytes).
+
+The remaining classes are style / dead-code / benign and are left **informational**
+— not tracked individually and not suppressed (they only appear if someone opts
+into the broad set locally). `-Wformat-nonliteral` (#24/#25) is the other open
+cleanup track, recorded above.
+
 **Triaging a new warning** (a compiler upgrade surfaces a new class, or a new
 file trips something):
 
