@@ -1003,7 +1003,7 @@ join_guild(int who, int g)
   if (kind(g) != T_skill || skill_school(g) != g) return FALSE;
   if (!can_join_guild(who, g)) return FALSE;
   wout(who, "%s joins the %s Guild.", just_name(who), just_name(g));
-  rp_char(who)->guild = g;
+  rp_char(who)->guild = (short)g;
   return TRUE;
 };
 

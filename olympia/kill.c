@@ -206,7 +206,7 @@ convert_to_soul(int pl, int who)
   if (bx[who]->name) my_free(bx[who]->name);
   bx[who]->name = str_save(new_name);
 
-  p_item(who)->weight = item_weight(item_peasant);
+  p_item(who)->weight = (short)item_weight(item_peasant);
   if (p_item(who)->plural_name) my_free(p_item(who)->plural_name);
   p_item(who)->plural_name = str_save("lost souls");
 
@@ -322,7 +322,7 @@ convert_to_body(int pl, int who)
   p_misc(who)->save_name = bx[who]->name;
   bx[who]->name = str_save("dead body");
   p_item(who)->plural_name = str_save("dead bodies");
-  p_item(who)->weight = item_weight(item_peasant);
+  p_item(who)->weight = (short)item_weight(item_peasant);
 
   /*
    *  Finally, stick it in the grave.

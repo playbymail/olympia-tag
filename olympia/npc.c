@@ -195,7 +195,7 @@ npc_move(int who)
 			   avoid_civ);
   if (e != NULL)
     {
-      p_misc(who)->npc_dir = e->direction;
+      p_misc(who)->npc_dir = (schar)e->direction;
       queue(who, "move %s", full_dir_s[e->direction]);
     }
 }

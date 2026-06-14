@@ -525,7 +525,7 @@ determine_noble_ranks(void)
       if (bx[player(who)]->temp == 0)
 	continue;
 
-      p_char(who)->rank = nprovs_to_rank(bx[player(who)]->temp);
+      p_char(who)->rank = (schar)nprovs_to_rank(bx[player(who)]->temp);
     }
   next_char;
 

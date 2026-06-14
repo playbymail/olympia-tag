@@ -769,7 +769,7 @@ d_forge_aura(struct command *c)
   set_name(new, new_name);
 
   p = p_item(new);
-  p->weight = rnd(1,3);
+  p->weight = (short)rnd(1,3);
 
   p_item_artifact(new)->type = ART_AURACULUM;
   p_item_artifact(new)->param1 = c->who;  /* creator */

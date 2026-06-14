@@ -125,7 +125,7 @@ create_faery(void)
 		  set_where(gate, ring);
 
 		  p_gate(gate)->to_loc = other_ring;
-		  rp_gate(gate)->seal_key = rnd(111,999);
+		  rp_gate(gate)->seal_key = (short)rnd(111,999);
 		};
 
 		ilist_reclaim(&l);

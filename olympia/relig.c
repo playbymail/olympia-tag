@@ -785,7 +785,7 @@ d_create_holy_symbol(struct command *c)
   set_name(new, new_name);
 
   p = p_item(new);
-  p->weight = rnd(1,3);
+  p->weight = (short)rnd(1,3);
   pm = p_item_magic(new);
   pm->creator = c->who;
   pm->religion = is_priest(c->who);

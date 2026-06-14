@@ -86,7 +86,7 @@ v_personal_fight_to_death(struct command *c)
 	if (flag > 100)
 		flag = 100;
 
-	p_char(c->who)->personal_break_point = flag;
+	p_char(c->who)->personal_break_point = (schar)flag;
 	wout(c->who, "%s will now leave battle when he has "
 	     "%d health remaining", box_name(c->who), flag);
 

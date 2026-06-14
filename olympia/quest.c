@@ -415,7 +415,7 @@ make_teach_book(int who, int rare, int category, int subkind)
 
   if (subkind == sub_book) {
     p_item(new)->weight = 5;
-    p->orb_use_count = rnd(7,28);
+    p->orb_use_count = (schar)rnd(7,28);
   } else {
     p_item(new)->weight = 1;
     p->orb_use_count = 1;
@@ -427,7 +427,7 @@ make_teach_book(int who, int rare, int category, int subkind)
    */
   ilist_append(&p->may_study, skill);
   if (p->orb_use_count < learn_time(skill))
-    p->orb_use_count = learn_time(skill);
+    p->orb_use_count = (schar)learn_time(skill);
 
   if (subkind == sub_book) {
     /*

@@ -301,10 +301,10 @@ add_new_player(int pl, const char *faction, const char *character, const char *f
 	 *  are doing.
 	 *
 	 */
-	pp->noble_points = starting_noble_points(nation);
+	pp->noble_points = (short)starting_noble_points(nation);
 	pp->first_turn = sysclock.turn + 1;
 	pp->last_order_turn = sysclock.turn;
-	pp->nation = nation;
+	pp->nation = (short)nation;
 	/*
 	 *  Thu Apr  9 08:41:42 1998 -- Scott Turner
 	 *

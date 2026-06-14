@@ -115,7 +115,7 @@ load_cmap_players(void)
     if (!count) continue;
     
     if (count < 10)
-      map[x][y] = '0' + count;
+      map[x][y] = (char)('0' + count);
     else {
       map[x][y] = '*';
       printf("%s at (%d, %d) has %d nobles.\n",

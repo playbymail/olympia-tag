@@ -825,7 +825,7 @@ do_notab(struct command *c)
 	    return TRUE;
 	}
 
-	p_player(pl)->notab = c->a;
+	p_player(pl)->notab = (schar)c->a;
 
 	out_alt_who = EAT_OKAY;
 	if (c->a)
@@ -2395,7 +2395,7 @@ v_notab(struct command *c)
     return TRUE;
   };
 
-  p_player(plyr)->notab = c->a;
+  p_player(plyr)->notab = (schar)c->a;
 
   out_alt_who = EAT_OKAY;
   if (c->a)

@@ -28,8 +28,8 @@ add_build(int what, int t, int bm, int er, int eg)
    *
    */
   new = my_malloc(sizeof(*new));
-  new->type = t;
-  new->build_materials = bm;
+  new->type = (uchar)t;
+  new->build_materials = (schar)bm;
   new->effort_required = er;
   new->effort_given = eg;
   /*

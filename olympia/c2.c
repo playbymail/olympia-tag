@@ -565,7 +565,7 @@ v_fight_to_death(struct command *c)
 	if (flag > 100)
 		flag = 100;
 
-	p_char(c->who)->break_point = flag;
+	p_char(c->who)->break_point = (schar)flag;
 	wout(c->who, "Troops led by %s will break at %d%%.",
 				box_name(c->who), flag);
 
@@ -1155,7 +1155,7 @@ do_market_tax(struct command *c)
     rate = 25;
   };
 
-  rp_subloc(city)->tax_market2 = rate;
+  rp_subloc(city)->tax_market2 = (short)rate;
   wout(c->who, "%s market tax rate will be set to %d%% at the end of the month.",
        box_name(city), rate);
   return TRUE;
@@ -1202,7 +1202,7 @@ do_province_tax(struct command *c)
     return FALSE;
   };
 
-  rp_loc(province)->tax_rate = rate;
+  rp_loc(province)->tax_rate = (short)rate;
   wout(c->who, "%s tax rate set to %d%%.",
        box_name(province), rate);
   wout(garrison_here(province), "%s set the province tax rate to %d%%.",

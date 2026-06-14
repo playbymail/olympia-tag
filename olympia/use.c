@@ -1588,7 +1588,7 @@ set_skill(int who, int skill, int know)
 
 	p = p_skill_ent(who, skill);
 
-	p->know = know;
+	p->know = (char)know;
 }
 
 

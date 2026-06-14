@@ -44,7 +44,7 @@
 #define SET3(x, x0, x1, x2)	((x)[0] = (x0), (x)[1] = (x1), (x)[2] = (x2))
 #define SETLOW(x, y, n) SET3(x, LOW((y)[n]), LOW((y)[(n)+1]), LOW((y)[(n)+2]))
 #define SEED(x0, x1, x2) (SET3(x, x0, x1, x2), SET3(a, A0, A1, A2), c = C)
-#define REST(v)	for (i = 0; i < 3; i++) { xsubi[i] = x[i]; x[i] = temp[i]; } \
+#define REST(v)	for (i = 0; i < 3; i++) { xsubi[i] = (unsigned short)x[i]; x[i] = temp[i]; } \
 		return (v);
 #define NEST(TYPE, f, F)	TYPE f(unsigned short *xsubi) { \
 	register int i; register TYPE v; unsigned temp[3]; \
@@ -458,10 +458,10 @@ init_lower(void)
 	int i;
 
 	for (i = 0; i < 256; i++)
-		lower_array[i] = i;
+		lower_array[i] = (char)i;
 
 	for (i = 'A'; i <= 'Z'; i++)
-		lower_array[i] = i - 'A' + 'a';
+		lower_array[i] = (char)(i - 'A' + 'a');
 }
 
 
@@ -630,8 +630,8 @@ init_random(void)
 	{
 		l = time(NULL);
 		seed[0] = l & 0xFFFF;
-		seed[1] = getpid();
-		seed[2] = l >> 16;
+		seed[1] = (unsigned short)getpid();
+		seed[2] = (unsigned short)(l >> 16);
 	}
 }
 
