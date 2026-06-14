@@ -226,7 +226,7 @@ lcase(char *s)
 
 	while (*s)
 	{
-		*s = tolower(*s);
+		*s = tolower((unsigned char)*s);
 		s++;
 	}
 }
@@ -471,8 +471,8 @@ i_strcmp(const char *s, const char *t)
 	char a, b;
 
 	do {
-		a = tolower(*s);
-		b = tolower(*t);
+		a = tolower((unsigned char)*s);
+		b = tolower((unsigned char)*t);
 		s++;
 		t++;
 		if (a != b)
@@ -489,8 +489,8 @@ i_strncmp(char *s, char *t, int n)
 	char a, b;
 
 	do {
-		a = tolower(*s);
-		b = tolower(*t);
+		a = tolower((unsigned char)*s);
+		b = tolower((unsigned char)*t);
 		if (a != b)
 			return a - b;
 		s++;
@@ -543,7 +543,7 @@ fuzzy_one_less(const char *one, const char *two, int l1, int l2)
 
 	for (j = 0, i = 0; j < l2; i++, j++)
 	{
-		if (tolower(one[i]) != tolower(two[j]))
+		if (tolower((unsigned char)one[i]) != tolower((unsigned char)two[j]))
 		{
 			if (count++)
 				return FALSE;
@@ -566,7 +566,7 @@ fuzzy_one_extra(const char *one, const char *two, int l1, int l2)
 
 	for (j = 0, i = 0; i < l1; i++, j++)
 	{
-		if (tolower(one[i]) != tolower(two[j]))
+		if (tolower((unsigned char)one[i]) != tolower((unsigned char)two[j]))
 		{
 			if (count++)
 				return FALSE;
@@ -588,7 +588,7 @@ fuzzy_one_bad(const char *one, const char *two, int l1, int l2)
 		return FALSE;
 
 	for (i = 0; i < l2; i++)
-		if (tolower(one[i]) != tolower(two[i]) && count++)
+		if (tolower((unsigned char)one[i]) != tolower((unsigned char)two[i]) && count++)
 			return FALSE;
 
 	return TRUE;

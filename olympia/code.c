@@ -122,17 +122,17 @@ code_to_int(const char *s)
 	case 3:
 		if (isdigit(*(s+1)) && isalpha(*(s+2)))		/* CNC */
 		{
-			a = tolower(*s) - 'a';
+			a = tolower((unsigned char)*s) - 'a';
 			b = *(s+1) - '0';
-			c = tolower(*(s+2)) - 'a';
+			c = tolower((unsigned char)*(s+2)) - 'a';
 
 			return a * 260 + b * 26 + c + 26760;
 		}
 
 		if (isalpha(*(s+1)) && isdigit(*(s+2)))		/* CCN */
 		{
-			a = tolower(*s) - 'a';
-			b = tolower(*(s+1)) - 'a';
+			a = tolower((unsigned char)*s) - 'a';
+			b = tolower((unsigned char)*(s+1)) - 'a';
 			c = *(s+2) - '0';
 
 			return a * 260 + b * 10 + c + 20000;
@@ -140,7 +140,7 @@ code_to_int(const char *s)
 
 		if (isdigit(*(s+1)) && isdigit(*(s+2)))		/* CNN */
 		{
-			a = tolower(*s) - 'a';
+			a = tolower((unsigned char)*s) - 'a';
 			b = *(s+1) - '0';
 			c = *(s+2) - '0';
 
@@ -152,8 +152,8 @@ code_to_int(const char *s)
 	case 4:
 		if (isalpha(*(s+1)) && isdigit(*(s+2)) && isdigit(*(s+3)))
 		{
-			a = tolower(*s) - 'a';
-			b = tolower(*(s+1)) - 'a';
+			a = tolower((unsigned char)*s) - 'a';
+			b = tolower((unsigned char)*(s+1)) - 'a';
 			c = *(s+2) - '0';
 			d = *(s+3) - '0';
 
@@ -163,10 +163,10 @@ code_to_int(const char *s)
 
 		if (isalpha(*(s+1)) && isdigit(*(s+2)) && isalpha(*(s+3)))
 		{
-			a = tolower(*s) - 'a';
-			b = tolower(*(s+1)) - 'a';
+			a = tolower((unsigned char)*s) - 'a';
+			b = tolower((unsigned char)*(s+1)) - 'a';
 			c = *(s+2) - '0';
-			d = tolower(*(s+3)) - 'a';
+			d = tolower((unsigned char)*(s+3)) - 'a';
 
 
 			return a * 6760 + b * 260 + c * 26 + d + 36120;
