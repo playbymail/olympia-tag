@@ -8,12 +8,13 @@ set(CMAKE_C_EXTENSIONS OFF)
 # =============================================================================
 # Compiler-flag conventions (read before "tidying up" this file)
 # =============================================================================
-# The 32->64-bit modernization ladder is partway done. Phases 1-8 were triaged
+# The 32->64-bit modernization ladder is partway done. Phases 1-9 were triaged
 # to ZERO and locked as errors (Phase 6 = shorten-64-to-32 +
 # sizeof-pointer-memaccess; Phase 7 = sign-conversion; Phase 8 = return-type +
-# return-mismatch); Phases 9-10 (the format family, implicit-int-conversion) are
-# still suppressed and will be locked one phase at a time. See CLAUDE.md
-# "Modernization status" and doc/modernization-64bit-plan.md.
+# return-mismatch; Phase 9 = the full format class, incl. format-security);
+# Phase 10 (implicit-int-conversion) is still suppressed and will be locked
+# next. See CLAUDE.md "Modernization status" and
+# doc/modernization-64bit-plan.md.
 #
 # 1. Enforced classes are written as an explicit pair, one class per line:
 #        -Wfoo -Werror=foo
@@ -54,9 +55,8 @@ function(olympia_compile_flags tgt)
         -Wno-parentheses
         -Wno-tautological-constant-out-of-range-compare
 
-        # --- Not yet chased down: Phases 9-10 of the ladder (still suppressed) ---
-        -Wno-format                    # Phase 9 (#12)
-        -Wno-format-security           # Phase 9 (#12)
+        # --- Not yet chased down: Phase 10 of the ladder (still suppressed) ---
+        # (implicit-int-conversion; Clang-guarded, locked last.)
 
         # --- Modernization classes triaged to 0 and locked (CLAUDE.md) ---
         -Wint-to-pointer-cast -Werror=int-to-pointer-cast                # Phase 1
@@ -81,6 +81,15 @@ function(olympia_compile_flags tgt)
         # behind G2's `st -32` flicker). Fall-off is only a *warning* by default
         # on both Clang and GCC, so lock it. Portable (GCC understands it too).
         -Wreturn-type -Werror=return-type                                # Phase 8 (#19)
+        # The format / vararg class. A bare %s/%d with no data argument reads a
+        # garbage stack pointer (and %s then derefs it); a width mismatch
+        # (%d <- long/size_t) silently truncates or corrupts on LP64; a
+        # non-literal format string lets %-bearing data read the stack. The
+        # printf wrappers carry __attribute__((format(printf,...))), so every
+        # call site is checkable. Locks the FULL class: under Clang -Wformat
+        # pulls in -Wformat-security, so dropping -Wno-format-security too leaves
+        # no sub-suppression (the g2 model). Portable (GCC understands it too).
+        -Wformat -Werror=format                                          # Phase 9 (#12)
     )
 
     # Clang-only diagnostic spellings. GCC either folds each into a broader

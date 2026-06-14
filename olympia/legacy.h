@@ -610,7 +610,7 @@ void load_orders(void);
 void orders_template(int who, int pl);
 void pop_order(int pl, int who);
 void prepend_order(int pl, int who, char *s);
-void queue(int who, const char *s, ...);
+void queue(int who, const char *s, ...) __attribute__((format(printf, 2, 3)));
 void queue_order(int pl, int who, char *s);
 void queue_stop(int pl, int who);
 void save_orders(void);
