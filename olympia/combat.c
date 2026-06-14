@@ -1109,8 +1109,13 @@ construct_guard_fight_list(int target, int attacker, fights_list
 		if (player(i) == player(attacker))
 			continue;
 
-		/* BUGFIX (modernization): yes, they do store ints and pointers in the same list */
-		if (fights_lookup(l_a, (struct fight *)((long)i)) >= 0)
+		/*
+		 *  #2: skip a guard already accounted for in the attacker's
+		 *  fight list. The old fights_lookup() compared element pointers
+		 *  to a box-id cast to a pointer, so it never matched; scan by
+		 *  unit via the existing contains_unit() helper instead.
+		 */
+		if (contains_unit(l_a, i))
 			continue;
 
 		add_fight_stack(&l, i, FALSE, defender);

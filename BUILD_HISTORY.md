@@ -307,14 +307,19 @@ lost:
   present. Reproduce on a turn-0 DB; fix by guarding the index against turn
   0/negative before indexing. A Phase-5 sanitizer-class finding.
 - **#2 — `construct_guard_fight_list` compares `fight *` to an `int` box-id
-  (`combat.c`).** `if (fights_lookup(l_a, (struct fight *)((long)i)) >= 0)`
-  compares element pointers to a box-id cast to a pointer, so the lookup always
-  returns `-1` and the "don't count a guarding unit already in `l_a`" guard never
-  fires. Fix = a `l_a[j]->unit == i` membership scan (`struct fight` has
-  `int unit`). This **changes combat resolution → changes golden output**, so it
-  is deferred and must be re-baselined with a note when done. (Same defect G3
-  fixed as its Bug #4; on G3 the turn-1 fixtures didn't exercise the guard path,
-  so the fix was golden byte-identical there.)
+  (`combat.c`). RESOLVED.** `if (fights_lookup(l_a, (struct fight *)((long)i)) >= 0)`
+  compared element pointers to a box-id cast to a pointer, so the lookup always
+  returned `-1` and the "don't count a guarding unit already in `l_a`" guard never
+  fired. Fixed by reusing TAG's existing `contains_unit(l_a, i)` helper (a
+  `->unit` membership scan, the same one `look_for_allies()` uses) instead of the
+  broken pointer-compare. Unlike G3 (which lacks `contains_unit` and inlined the
+  loop in its Bug #4 fix, `1bfb83f`), `contains_unit` also filters
+  `kind == FK_noble` — harmless here since the candidate is always a `T_char` and
+  only `FK_noble` entries key `->unit` to a character box-id. **Golden byte-identical**
+  on both presets (the turn-1 fixture doesn't exercise the guard path, as on G3),
+  so no re-baseline was needed. The corrected behavior is not yet pinned by a
+  regression fixture (no fixture triggers combat). Cross-engine parity tracked as
+  olympia-g3 issue for refactoring G3 to a shared `contains_unit` helper.
 - **#24 / #25 — non-literal format strings (`-Wformat-nonliteral`).** Surfaced by
   the Phase 9 scan but deliberately out of scope (`-Wformat-nonliteral` is not
   part of `-Wformat` on Clang or GCC, so it is not covered by the `-Werror=format`

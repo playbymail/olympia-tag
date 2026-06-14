@@ -170,9 +170,6 @@ Tracks intentionally **not** part of the phase ladder (full detail in
 
 - **#1** — `times_masthead()` reads `month_names[-1]` at turn 0 (latent under the
   turn-1 fixture; a Phase-5 sanitizer-class finding).
-- **#2** — `construct_guard_fight_list` compares `fight *` to an `int` box-id, so
-  the guard never fires; fixing it **changes combat resolution → changes golden**,
-  so it is deferred and re-baselined with a note when done.
 - **#24 / #25** — non-literal format strings (`-Wformat-nonliteral`), out of scope
   for the Phase 9 `-Werror=format` lock. #25 is a real **security** bug: EMOTE
   (`v_emote`, `c1.c`) passes raw player input as a `printf` format string
