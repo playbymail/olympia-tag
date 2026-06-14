@@ -151,7 +151,16 @@ times_masthead(void)
 	  
 	  month = oly_month(sysclock);
 	  year = oly_year(sysclock);
-	  
+
+	  /*
+	   *  BUGFIX (#1): at turn 0 oly_month() is (0-1) % NUM_MONTHS == -1
+	   *  (C truncates toward zero), which would read month_names[-1] --
+	   *  a global-buffer underflow.  Wrap a negative index back into
+	   *  range; turn >= 1 is unaffected, so golden output is unchanged.
+	   */
+	  if (month < 0)
+		  month += NUM_MONTHS;
+
 	  sprintf(issue_s, "Game %d, Season \"%s\", month %d, in the year %d.",
 		  game_number,
 		  month_names[month],

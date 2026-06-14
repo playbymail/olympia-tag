@@ -1996,6 +1996,12 @@ player_banner(void)
 			month = oly_month(sysclock);
 			year = oly_year(sysclock);
 
+			/* BUGFIX (#1): oly_month() underflows to -1 at turn 0;
+			 * wrap a negative index so month_names[] stays in bounds
+			 * (turn >= 1 unchanged -- see times.c). */
+			if (month < 0)
+				month += NUM_MONTHS;
+
 			wout(pl, "Season \"%s\", month %d, in the year %d.",
 					month_names[month],
 					month + 1,
