@@ -8,10 +8,10 @@ set(CMAKE_C_EXTENSIONS OFF)
 # =============================================================================
 # Compiler-flag conventions (read before "tidying up" this file)
 # =============================================================================
-# The 32->64-bit modernization ladder is partway done. Phases 1-7 were triaged
+# The 32->64-bit modernization ladder is partway done. Phases 1-8 were triaged
 # to ZERO and locked as errors (Phase 6 = shorten-64-to-32 +
-# sizeof-pointer-memaccess; Phase 7 = sign-conversion); Phases 8-10
-# (return-type/return-mismatch, the format family, implicit-int-conversion) are
+# sizeof-pointer-memaccess; Phase 7 = sign-conversion; Phase 8 = return-type +
+# return-mismatch); Phases 9-10 (the format family, implicit-int-conversion) are
 # still suppressed and will be locked one phase at a time. See CLAUDE.md
 # "Modernization status" and doc/modernization-64bit-plan.md.
 #
@@ -54,9 +54,7 @@ function(olympia_compile_flags tgt)
         -Wno-parentheses
         -Wno-tautological-constant-out-of-range-compare
 
-        # --- Not yet chased down: Phases 8-10 of the ladder (still suppressed) ---
-        -Wno-return-type               # Phase 8 (#19)
-        -Wno-return-mismatch           # Phase 8 (#19)
+        # --- Not yet chased down: Phases 9-10 of the ladder (still suppressed) ---
         -Wno-format                    # Phase 9 (#12)
         -Wno-format-security           # Phase 9 (#12)
 
@@ -78,14 +76,28 @@ function(olympia_compile_flags tgt)
         # size_t arg is a real hazard. All sites were counts/lengths provably
         # >= 0, cast explicitly to (size_t). Portable (GCC understands it too).
         -Wsign-conversion -Werror=sign-conversion                        # Phase 7 (#18)
+        # A non-void function that falls off the end leaves the caller reading a
+        # garbage register -- on LP64 an 8-byte garbage long/pointer (the class
+        # behind G2's `st -32` flicker). Fall-off is only a *warning* by default
+        # on both Clang and GCC, so lock it. Portable (GCC understands it too).
+        -Wreturn-type -Werror=return-type                                # Phase 8 (#19)
     )
 
-    # Clang-only diagnostic spellings; GCC folds each into a broader class
-    # (-Wconversion) not enabled here.
+    # Clang-only diagnostic spellings. GCC either folds each into a broader
+    # class (-Wconversion, not enabled here) or enforces it by default, and
+    # treats an unknown positive -W* as fatal -- so these must stay guarded to
+    # keep GCC building.
     if (CMAKE_C_COMPILER_ID MATCHES "Clang")
         target_compile_options(${tgt} PRIVATE
             # The LP64 width-truncation class (long/size_t/ssize_t into int).
             -Wshorten-64-to-32 -Werror=shorten-64-to-32                  # Phase 6 (#17)
+            # A bare `return;` in a non-void fn. Clang splits this out of
+            # -Wreturn-type, so Clang needs it explicitly. GCC enforces the class
+            # WITHOUT this flag (default-on permerror on >=14; folded into
+            # -Wreturn-type on <=13, where the option was not yet split out and an
+            # unknown positive -W* aborts the compile) -- so keep it Clang-only to
+            # keep GCC <=13 building. No coverage lost.
+            -Wreturn-mismatch -Werror=return-mismatch                    # Phase 8 (#19)
         )
     endif()
 endfunction()
