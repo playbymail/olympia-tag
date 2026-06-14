@@ -396,7 +396,7 @@ err(int k, char *s)
   if (line_count < last_line) last_line = 0;
 
   if (line_count > last_line) {
-    out(eat_pl, "line %d: %s", line_count, save_line, s);
+    out(eat_pl, "line %d: %s", line_count, save_line);
     last_line = line_count;
   };
     

@@ -361,12 +361,12 @@ d_generic_make(struct command *c, struct make *t)
 	   *
 	   */
 	  qty *= 2;
-	  wout(c->who,"You are unusually productive.",box_name(c->who));
+	  wout(c->who,"You are unusually productive.");
 	};
 
 	if (a = has_artifact(c->who, ART_TRAINING, t->item, 0, 0)) {
 	  qty *= 2;
-	  wout(c->who,"Training is unusually productive.",box_name(c->who));
+	  wout(c->who,"Training is unusually productive.");
 	};
 
 	if (t->inp1)

@@ -1134,7 +1134,7 @@ do_market_tax(struct command *c)
 
   if (!(valid_box(city) &&
 	(subkind(city) == sub_city || is_guild(city) == sk_trading))) {
-    wout(c->who, "Must name a city or trading guild.", box_name(c->a));
+    wout(c->who, "Must name a city or trading guild.");
     return FALSE;
   };
 

@@ -3046,7 +3046,7 @@ v_move_attack(struct command *c)
 
   if (v == NULL) {
     if (attack)
-      wout(c->who,"No target found!", c->parse[0]);
+      wout(c->who,"No target found!");
     else
       wout(c->who,"No valid arguments to %s.", c->parse[0]);
     return FALSE;

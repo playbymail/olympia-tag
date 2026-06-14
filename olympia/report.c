@@ -1390,7 +1390,7 @@ loc_stack_report(int pl)
 		      "* -- unit belongs to another faction");
 	}
 
-	tagout(pl, "</tag type=loc_summary>", pl);
+	tagout(pl, "</tag type=loc_summary>");
 	ilist_reclaim(&l);
 	ilist_reclaim(&locs);
 }
@@ -1439,7 +1439,7 @@ stack_capacity_report(int pl)
 		if (first)
 		{
 		  tagout(pl, "<tag type=capacity_summary pl=%d>",pl);
-		  tagout(pl, "<tag type=header >",pl);
+		  tagout(pl, "<tag type=header >");
 			out(pl, "");
 			out(pl, "Stack Capacities:");
 			out(pl, "  - First number is additional weight "
@@ -1461,7 +1461,7 @@ stack_capacity_report(int pl)
 					"-----------",
 					"-----------",
 					"-----------");
-		  tagout(pl, "</tag type=header >",pl);
+		  tagout(pl, "</tag type=header >");
 			first = FALSE;
 		}
 
@@ -1554,7 +1554,7 @@ stack_capacity_report(int pl)
 	next_unit;
 
 	if (!first)
-	  tagout(pl, "</tag type=capacity_summary>",pl);
+	  tagout(pl, "</tag type=capacity_summary>");
 }
 
 

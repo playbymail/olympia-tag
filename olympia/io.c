@@ -992,12 +992,16 @@ build_list_scan(char *s, struct entity_build ***l)
   struct entity_build *new;
   
   while (1) {
+    int tmp_type, tmp_build_materials;
+
     new = my_malloc(sizeof(*new));
     sscanf(s, "%d %d %d %d",
-	   &new->type,
-	   &new->build_materials,
+	   &tmp_type,
+	   &tmp_build_materials,
 	   &new->effort_required,
 	   &new->effort_given);
+    new->type = tmp_type;			/* uchar field, scanned via int temp */
+    new->build_materials = tmp_build_materials;	/* schar field, scanned via int temp */
 
     entity_builds_append(l, new);
 

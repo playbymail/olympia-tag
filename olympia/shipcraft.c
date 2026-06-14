@@ -608,13 +608,13 @@ ship_summary(int pl)
       if (!ship) continue;
       if (!first) {
 	tagout(pl,"<tag type=ship_report pl=%d>", pl);
-	tagout(pl,"<tag type=header>", pl);
+	tagout(pl,"<tag type=header>");
 	out(pl, "");
 	out(pl, "Ship Report:");
 	out(pl, "");
 	out(pl, "ship  hulls  ports  sails  keels  forts  damge  capacity");
 	out(pl, "----  -----  -----  -----  -----  -----  -----  --------");
-	tagout(pl,"</tag type=header>", pl);
+	tagout(pl,"</tag type=header>");
 
 
 	first = 1;

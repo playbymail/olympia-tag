@@ -68,7 +68,7 @@ main(int argc, char **argv)
 	int map_test_flag = FALSE;
 	int unspool_first_flag = FALSE;
 
-	printf("\tsizeof(struct box) = %d\n", sizeof(struct box));
+	printf("\tsizeof(struct box) = %zu\n", sizeof(struct box));
 	setbuf(stderr, NULL);
 
 	umask(S_IRWXO);
@@ -1096,7 +1096,7 @@ setup_html_all(void)
     fprintf(stderr,"Can't open %s for writing?", fnam);
     fp = stderr;
   };
-  fprintf(fp,"<TABLE CELLSPACING=0 CELLPADDING=5 WIDTH=\"100%\" "
+  fprintf(fp,"<TABLE CELLSPACING=0 CELLPADDING=5 WIDTH=\"100%%\" "
 	  "BGCOLOR=\"#48D1CC\" >\n");
 
   /* write and execute only for self. */
