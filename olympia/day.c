@@ -231,7 +231,7 @@ evacuate(int where, int exit, int evac_levels)
        *  What's left here?  We need to get rid of it.
        *
        */
-    wout(gm_player, "Removing %s from collapsing mine?", i);
+    wout(gm_player, "Removing %s from collapsing mine?", box_name(i));
     delete_box(i);
   } next_here;
 

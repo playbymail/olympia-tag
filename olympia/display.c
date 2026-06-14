@@ -1316,7 +1316,7 @@ show_loc_ruler(int who, int where)
       int prov = province(castle);
 
       tagout(who,"<tag type=ruler id=%d castle=%d province=%d ruler=%d>",
-	     castle, prov, ruler);
+	     where, castle, prov, ruler);
 
       out(who, "Province controlled by %s, in %s",
 	  box_name_kind(castle), box_name(prov));

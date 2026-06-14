@@ -612,8 +612,7 @@ d_aura_blast(struct command *c)
 	  wout(VECT, "The blast dissipates harmlessly against %s's holy aura!",
 	       just_name(target));
 	} else if (has_artifact(target, ART_PROT_SKILL, sk_aura_blast, 0, 0)) {
-	  /* TODO (modernization): format string with no argument */
-	  wout(target, "%s briefly gives off a blinding light.");
+	  wout(target, "%s briefly gives off a blinding light.", just_name(target));
 	} 
 	else
 		add_char_damage(target, aura * 2, MATES);

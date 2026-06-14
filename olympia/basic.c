@@ -805,7 +805,7 @@ v_write_spell(struct command *c)
    */
   if (has_item(c->who, item_blank_scroll) < scrolls_needed(days)) {
     wout(c->who,"You need %d scroll%s to record %d day%s.",
-	 scrolls_needed(days),
+	 (int)scrolls_needed(days),
 	 scrolls_needed(days) > 1 ? "s" : "",
 	 days,
 	 days > 1 ? "s" : "");

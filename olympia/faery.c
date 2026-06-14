@@ -405,8 +405,8 @@ do_wild_hunt(int where)
   
   move_stack(who, dest);
   wout(who,"in %s!",box_name(dest));
-  wout(who,"The hollow laughter and enchanting music of the Wild Hunt fades",
-       "slowly away as you realize your predicament.");
+  wout(who,"The hollow laughter and enchanting music of the Wild Hunt fades"
+       " slowly away as you realize your predicament.");
 };
 
 /*

@@ -929,7 +929,7 @@ v_art_teleport(struct command *c)
   determine_stack_weights(c->who, &w, FALSE);
 
   if (w.total_weight > rp_item_artifact(item)->param1) {
-    wout(c->who,"%s hums briefly but nothing happens.");
+    wout(c->who,"%s hums briefly but nothing happens.", box_name(item));
     return FALSE;
   };
 

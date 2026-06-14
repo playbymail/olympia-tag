@@ -1786,7 +1786,7 @@ d_enchant_guard(struct command *c)
    *
    */
   if (is_priest(target) == is_priest(c->who)) {
-    wout(c->who, "%s glibly talks the city guards out of detaining him.");
+    wout(c->who, "%s glibly talks the city guards out of detaining him.", box_name(target));
     return TRUE;
   };
 
@@ -1861,7 +1861,7 @@ d_urchin_spy(struct command *c)
    *
    */
   if (is_priest(target) == is_priest(c->who)) {
-    wout(c->who, "Somehow, %s talks the urchin out of spying on him.");
+    wout(c->who, "Somehow, %s talks the urchin out of spying on him.", box_name(target));
     return TRUE;
   };
 
@@ -1993,7 +1993,7 @@ d_arrange_mugging(struct command *c)
    *
    */
   if (is_priest(target) == is_priest(c->who)) {
-    wout(c->who, "Somehow, %s avoids the muggers.");
+    wout(c->who, "Somehow, %s avoids the muggers.", box_name(target));
     return TRUE;
   };
 

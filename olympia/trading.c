@@ -1509,7 +1509,7 @@ d_hide_money(struct command *c)
    */
   if (what + has_item(c->who, item_gold) < amount) {
     wout(c->who,"You don't have %s to hide, hiding %s.",
-	 gold_s(amount-what), has_item(c->who, item_gold));
+	 gold_s(amount-what), gold_s(has_item(c->who, item_gold)));
     what = has_item(c->who, item_gold);
   };
 

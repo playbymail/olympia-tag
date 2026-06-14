@@ -454,8 +454,8 @@ city_loc_okay(struct command *c, int where)
     here = l[i]->destination;
     if (loc_depth(here) != LOC_province) continue;
     if (habitable(here) && has_item(here, item_peasant) < 100) {
-      wout(c->who,"All adjacent habitable provinces must have a population",
-	   "of at least 100 peasants.");
+      wout(c->who,"All adjacent habitable provinces must have a population"
+	   " of at least 100 peasants.");
       return FALSE;
     };
   };
