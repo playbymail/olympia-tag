@@ -1343,7 +1343,7 @@ v_build(struct command *c)
 {
 	struct build_ent *t;
 	const char *s;
-	int days, id;
+	int days, id = 0;
 	int where = subloc(c->who);
 	int partial = FALSE;
 

@@ -1309,7 +1309,7 @@ d_death_fog(struct command *c)
   int where;
   struct entity_misc *p;
   int save_aura;
-  int aura_used;
+  int aura_used = 0;
   struct item_ent *e;
 
   if (kind(storm) != T_storm || npc_summoner(storm) != c->who)
@@ -1417,9 +1417,7 @@ d_banish_corpses(struct command *c)
 {
 	int target = c->a;
 	int max_aura = c->b;
-	int i;
 	int sum = 0;
-	int n;
 	int max;
 
 	sum = has_item(target, item_corpse);
@@ -1459,8 +1457,8 @@ d_banish_corpses(struct command *c)
 				plural_item_name(item_corpse, sum));
 
 	consume_item(target, item_corpse, sum);
-	wout(i, "%s banished our %s!", box_name(c->who),
-	     plural_item_name(item_corpse, n));
+	wout(target, "%s banished our %s!", box_name(c->who),
+	     plural_item_name(item_corpse, sum));
 
 	return TRUE;
 }

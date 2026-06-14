@@ -371,8 +371,8 @@ make_new_players_sup(char *acct, FILE *fp)
 {
   const char *faction;
   const char *character;
-  const char *full_name;
-  const char *email;
+  const char *full_name = "";
+  const char *email = "";
   const char *nat;
   const char *start_city;
   int pl, n = 0, i, sc = 0;

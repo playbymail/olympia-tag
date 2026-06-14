@@ -1129,7 +1129,7 @@ v_use_item(struct command *c)
 {
 	int item = c->a;
 	int n;
-	int ret;
+	int ret = FALSE;
 
 	c->poll = FALSE;
 	c->wait = 0;
