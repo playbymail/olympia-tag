@@ -1791,6 +1791,8 @@ int
 v_emote(struct command *c)
 {
 	int target = c->a;
+	char *msg;
+	char *pct;
 
 	if (numargs(c) < 2)
 	{
@@ -1798,7 +1800,23 @@ v_emote(struct command *c)
 		return FALSE;
 	}
 
-	wout(target, c->parse[2], box_name(target));
+	/*
+	 *  SECURITY (#24/#25): c->parse[2] is raw player input.  It used
+	 *  to be passed straight to wout() as the printf format string, so
+	 *  a player could inject specifiers (e.g. EMOTE <t> %s%n) and read
+	 *  or scribble the stack.  Preserve the one documented substitution
+	 *  -- the first "%s" is replaced with the target's name -- but emit
+	 *  everything else as literal data so no player-supplied "%" is ever
+	 *  interpreted as a conversion.
+	 */
+	msg = c->parse[2];
+	pct = strstr(msg, "%s");
+
+	if (pct)
+		wout(target, "%.*s%s%s", (int)(pct - msg), msg,
+				box_name(target), pct + 2);
+	else
+		wout(target, "%s", msg);
 
 	return TRUE;
 }
