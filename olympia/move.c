@@ -1249,7 +1249,7 @@ peaceful_enter(int who, int from, int where)
 int
 check_peaceful_move(struct command *c, struct exit_view *v)
 {
-  int ruler = 0, pl;
+  int ruler = 0, pl = player_controls_loc(v->destination);
   struct loc_control_ent *control = NULL;
   int cost = 0, payee = 0;
   int where = subloc(c->who);

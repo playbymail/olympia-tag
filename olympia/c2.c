@@ -777,6 +777,8 @@ v_board(struct command *c)
 		return FALSE;
 	}
 
+	amount = ship_fee;		/* what the captain charges is what we pay */
+
 	determine_stack_weights(c->who, &w, FALSE);
 
 /*

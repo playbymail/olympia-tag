@@ -2487,7 +2487,7 @@ new_trade(int who, int kind, int item);
 static void
 add_bounty(int where)
 {
-  int i, sum = 0, choice = 0, found, count = 0, qty;
+  int sum = 0, choice = 0, found, count = 0, qty;
   struct trade *t;
   /*
    *  Select in one pass a random animal part.
@@ -2514,7 +2514,7 @@ add_bounty(int where)
      */
     found = 0;
     loop_trade(where, t) {
-      if (t->item == i && t->kind == BUY) {
+      if (t->item == item_animal_part(choice) && t->kind == BUY) {
 	found = 1;
 	break;
       };
