@@ -8,8 +8,9 @@ set(CMAKE_C_EXTENSIONS OFF)
 # =============================================================================
 # Compiler-flag conventions (read before "tidying up" this file)
 # =============================================================================
-# The 32->64-bit modernization ladder is partway done. Phases 1-5 were triaged
-# to ZERO and locked as errors; Phases 6-10 (shorten-64-to-32, sign-conversion,
+# The 32->64-bit modernization ladder is partway done. Phases 1-6 were triaged
+# to ZERO and locked as errors (Phase 6 = shorten-64-to-32 +
+# sizeof-pointer-memaccess); Phases 7-10 (sign-conversion,
 # return-type/return-mismatch, the format family, implicit-int-conversion) are
 # still suppressed and will be locked one phase at a time. See CLAUDE.md
 # "Modernization status" and doc/modernization-64bit-plan.md.
@@ -53,8 +54,7 @@ function(olympia_compile_flags tgt)
         -Wno-parentheses
         -Wno-tautological-constant-out-of-range-compare
 
-        # --- Not yet chased down: Phases 6-10 of the ladder (still suppressed) ---
-        -Wno-sizeof-pointer-memaccess  # Phase 6 (#17)
+        # --- Not yet chased down: Phases 8-10 of the ladder (still suppressed) ---
         -Wno-return-type               # Phase 8 (#19)
         -Wno-return-mismatch           # Phase 8 (#19)
         -Wno-format                    # Phase 9 (#12)
@@ -69,7 +69,21 @@ function(olympia_compile_flags tgt)
         -Wmissing-prototypes -Werror=missing-prototypes                  # Phase 4
         -Wimplicit-function-declaration -Werror=implicit-function-declaration  # Phase 4
         -Wmissing-declarations -Werror=missing-declarations              # Phase 5
+        # A sizeof(ptr) where sizeof(*ptr) is meant grows 4->8 bytes on LP64
+        # (a real corruption risk). TAG's RNG is inlined in z.c (no rnd.c) with
+        # no MD5 bzero(ctx, sizeof(ctx)) defect, so this class is already 0;
+        # locked at zero. Portable (GCC understands it too).
+        -Wsizeof-pointer-memaccess -Werror=sizeof-pointer-memaccess      # Phase 6 (#17)
     )
+
+    # Clang-only diagnostic spellings; GCC folds each into a broader class
+    # (-Wconversion) not enabled here.
+    if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+        target_compile_options(${tgt} PRIVATE
+            # The LP64 width-truncation class (long/size_t/ssize_t into int).
+            -Wshorten-64-to-32 -Werror=shorten-64-to-32                  # Phase 6 (#17)
+        )
+    endif()
 endfunction()
 
 function(olympia_enable_sanitizers tgt)
