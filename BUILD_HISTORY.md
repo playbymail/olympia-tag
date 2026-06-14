@@ -439,7 +439,10 @@ commit.
   surfaces ~36 more latent "switch default falls through" sites across other
   files, so a `-Werror` lock would break the release/asan builds. This is exactly
   the opt-level/version instability the ratchet avoids — `-Wuninitialized` stays
-  **informational** (a deeper `-O2` sweep of the remaining sites is future work).
+  **informational**. The ~36 (13 distinct) `-O1`+ sites are the `assert(FALSE)`
+  -as-unreachable idiom degrading under `NDEBUG`; they share a root cause with the
+  `release`-preset `-Werror=return-type` build failure and are tracked together in
+  **#28** (fixing it unblocks promoting `-Wuninitialized`).
 
 The remaining classes are style / dead-code / benign and are left **informational**
 — not tracked individually and not suppressed (they only appear if someone opts
