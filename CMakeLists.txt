@@ -86,6 +86,11 @@ function(olympia_compile_flags tgt)
         # pulls in -Wformat-security, so dropping -Wno-format-security too leaves
         # no sub-suppression (the g2 model). Portable (GCC understands it too).
         -Wformat -Werror=format                                          # Phase 9 (#12)
+        # Post-64-bit warning-ratchet promotion (not a ladder phase): a signed
+        # char passed to a ctype macro (tolower etc.) indexes a table at a
+        # negative offset on high-bit bytes -- latent OOB / UB. All sites cast
+        # to (unsigned char); driven to zero and locked. Portable (GCC too).
+        -Wchar-subscripts -Werror=char-subscripts                        # ratchet (#27)
     )
 
     # Clang-only diagnostic spellings. GCC either folds each into a broader
