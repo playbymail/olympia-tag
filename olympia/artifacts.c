@@ -512,7 +512,7 @@ random_beast(int sk)
 	item_wild(i) &&
 	(!sk || subkind(i) == sk) &&
 	!rp_item(i)->maintenance) {
-      val = MAX_MM - MM(i) + 1;
+      val = (int) (MAX_MM - MM(i) + 1);	/* monstermark fits 32 bits */
       if (val < 0) val = 1;
       sum += val;
       if (rnd(1,sum) <= val) {

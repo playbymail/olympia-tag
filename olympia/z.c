@@ -331,7 +331,7 @@ getlin_ew(FILE *fp)
 #define MAX_BUF         8192
 
 static char linebuf[MAX_BUF];
-static int nread;
+static ssize_t nread;	/* read() result; ssize_t avoids LP64 truncation */
 static int line_fd = -1;
 static char *point;
 
@@ -598,8 +598,8 @@ fuzzy_one_bad(const char *one, const char *two, int l1, int l2)
 int
 fuzzy_strcmp(const char *one, const char *two)
 {
-	int l1 = strlen(one);
-	int l2 = strlen(two);
+	int l1 = (int) strlen(one);	/* name lengths fit 32 bits */
+	int l2 = (int) strlen(two);
 
 	if (l2 >= 4 && fuzzy_transpose(one, two, l1, l2))
 		return TRUE;

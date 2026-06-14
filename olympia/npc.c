@@ -406,7 +406,7 @@ release_prisoners(int who, char *reason)
 static int
 breed_okay(int who)
 {
-  int mm = MM(who);
+  int mm = (int) MM(who);	/* monstermark fits 32 bits */
   int where = subloc(who);
   int i, first = 1, item;
 
@@ -713,7 +713,7 @@ find_weak_garrison(int who, long (*strength_function)(int))
   exit_views_list l;
   int where = subloc(who);
   int i;
-  int my_strength = strength_function(who);
+  int my_strength = (int) strength_function(who);	/* monstermark fits 32 bits */
 
   /*
    *  Note: L is randomized.
@@ -1973,7 +1973,7 @@ d_npc_breed(struct command *c)
    *  Should be based on MM -- lesser creatures breed more easily than
    *  stronger -- maximum 50%, minimum 1%
    */
-  breed_chance = ((25 * (MAX_MM - MM(item)))/MAX_MM) + 1;
+  breed_chance = (int) (((25 * (MAX_MM - MM(item)))/MAX_MM) + 1);	/* monstermark fits 32 bits */
   
   /*
    *  Always a chance.

@@ -169,8 +169,8 @@ generate_one_treasure(int monster)
 void
 generate_treasure(int unit, int divisor)
 {
-  int unit_mm = monstermark(unit)/divisor;
-  int one_treasure = 25 * MM(item_orc);
+  int unit_mm = (int) (monstermark(unit)/divisor);	/* monstermark fits 32 bits */
+  int one_treasure = (int) (25 * MM(item_orc));	/* monstermark fits 32 bits */
   int count = 0, i;
 
   if (unit_mm < one_treasure*0.80)
