@@ -1170,7 +1170,7 @@ unit_summary_sup(int pl, int who)
 		  fight,
 		  pr ? -1 : stack_parent(who), 
 		  nam);
-	  tagout(pl, buf);
+	  tagout(pl, "%s", buf);
 	};
 	    
 	sprintf(buf, "%-*s %-*s %-5s %4s%2d%5s %4s %4s %4s %4s %4s %-*s %s",

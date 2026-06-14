@@ -937,7 +937,7 @@ void use_skill(int who, int skill)
     return;
   };
   sprintf(buf,"use %d", skill);
-  queue(who, buf);
+  queue(who, "%s", buf);
 };
 
 static int

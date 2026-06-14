@@ -1360,7 +1360,7 @@ show_loc_ruler(int who, int where)
 	   rp_loc(where)->control.weight,
 	   rp_loc(where)->control.men);
     strcpy(buf,"Entrance fees: ");
-    out(who,buf);
+    out(who,"%s",buf);
     tagout(who,"</tag type=fees>");
   };
   

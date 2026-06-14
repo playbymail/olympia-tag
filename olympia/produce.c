@@ -790,9 +790,9 @@ i_generic_harvest(struct command *c, struct harvest *t)
 	if (c->d == 0 && item_avail(where,t->item) == 0)
 	{
 		if (item_gen_here(where, t->item))
-			out(c->who, t->none_now);
+			out(c->who, "%s", t->none_now);
 		else
-			out(c->who, t->none_ever);
+			out(c->who, "%s", t->none_ever);
 	}
 	else
 	{

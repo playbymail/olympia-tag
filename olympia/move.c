@@ -1670,7 +1670,7 @@ check_arrival_effects(int who, int where, int flying)
 	 *
 	 */
 	if (priest_in_stack(who, traps[i].religion)) {
-	    wout(VECT, traps[i].ignored);
+	    wout(VECT, "%s", traps[i].ignored);
 	    continue;
 	  };
 	/*
@@ -1679,7 +1679,7 @@ check_arrival_effects(int who, int where, int flying)
 	 */
 	if (flying) {
 	  if ((rnd(1,4) > 2)) {
-	    wout(VECT, traps[i].flying);
+	    wout(VECT, "%s", traps[i].flying);
 	  };
 	  continue;
 	};
@@ -1701,7 +1701,7 @@ check_arrival_effects(int who, int where, int flying)
 	 *  is the "who" being passed in.
 	 *
 	 */
-	wout(VECT, traps[i].attack);
+	wout(VECT, "%s", traps[i].attack);
 	do_trap_attack(who, traps[i].num_attacks, traps[i].attack_chance);
 	delete_effect(where, e->type, e->subtype);
       };

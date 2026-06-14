@@ -1643,7 +1643,7 @@ mine_info_print(FILE *fp, char *header, struct entity_mine *m)
   int i;
   int count = 0;
 
-  fprintf(fp, header);
+  fprintf(fp, "%s", header);
   for (i = 0; i < MINE_MAX; i++) {
     if (item_list_print(fp, "    ml\t", m->mc[i].items) == 0) {
       fputs("    ml\t\n", fp);
