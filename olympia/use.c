@@ -1747,7 +1747,7 @@ list_skills(int who, int num, char *prefix)
 		goto list_skills_end;
 
 	l = skill_ents_copy( rp_char(num)->skills);
-	qsort(l, skill_ents_len(l), sizeof(struct skill_ent *), rep_skill_comp);
+	qsort(l, (size_t) skill_ents_len(l), sizeof(struct skill_ent *), rep_skill_comp);
 
 	for (i = 0; i < skill_ents_len(l); i++)
 	{
@@ -1847,7 +1847,7 @@ list_partial_skills(int who, int num, char *prefix)
 		return;
 
 	l =  skill_ents_copy( rp_char(num)->skills);
-	qsort(l, skill_ents_len(l), sizeof(struct skill_ent *), flat_skill_comp);
+	qsort(l, (size_t) skill_ents_len(l), sizeof(struct skill_ent *), flat_skill_comp);
 
 	for (i = 0; i < skill_ents_len(l); i++)
 	{

@@ -1032,7 +1032,7 @@ increment_current_piety(void)
      */
     if (!ilist_len(priests)) continue;
 
-    qsort(priests, ilist_len(priests), sizeof(int), followers_comp);
+    qsort(priests, (size_t) ilist_len(priests), sizeof(int), followers_comp);
 
     /*
      *  Top guy gets 12 piety plus 10 angels.

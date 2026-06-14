@@ -678,7 +678,7 @@ garrison_summary(int pl)
       first = TRUE;
       garr = l[i];
       if (item_ents_len(bx[garr]->items) > 0) {
-	qsort(bx[garr]->items, item_ents_len(bx[garr]->items),
+	qsort(bx[garr]->items, (size_t) item_ents_len(bx[garr]->items),
 	      sizeof(struct item_ent *), inv_item_comp);
 	loop_inv(garr, e) {
 	  if (first) {

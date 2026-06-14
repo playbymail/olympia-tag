@@ -86,7 +86,7 @@
 #define	loop_known(kn, i) \
 { int ll_i; \
   int ll_check = 3; \
-	qsort(kn, ilist_len(kn), sizeof(int), int_comp); \
+	qsort(kn, (size_t) ilist_len(kn), sizeof(int), int_comp); \
 	for (ll_i = 0; ll_i < ilist_len(kn); ll_i++) { \
 	    i = kn[ll_i];
 
@@ -398,7 +398,7 @@
   item_ents_list ll_l = NULL; \
     assert(valid_box(who)); \
     ll_l = item_ents_copy(bx[who]->items); \
-    qsort(ll_l, item_ents_len(ll_l), sizeof(struct item_ent *), combat_comp); \
+    qsort(ll_l, (size_t) item_ents_len(ll_l), sizeof(struct item_ent *), combat_comp); \
 	for (ll_i = 0; ll_i < item_ents_len(ll_l); ll_i++) \
 	    if (valid_box(ll_l[ll_i]->item) && ll_l[ll_i]->qty > 0) { \
 		    ll_copy = *ll_l[ll_i]; \

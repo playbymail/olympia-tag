@@ -2403,7 +2403,7 @@ attack_round(fights_list l_a, fights_list l_b, int type)
    *  Create, populate and scramble the array.
    *
    */
-  order = (int *) malloc( order_size * sizeof(int));
+  order = (int *) malloc( (size_t) order_size * sizeof(int));
   for(i=0;i < order_size;i++) order[i] = i+1;  /* Men are 1 based */
   for(i=0;i < order_size-1;i++) {
     r = rnd(i,order_size-1);
