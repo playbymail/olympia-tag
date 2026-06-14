@@ -165,17 +165,18 @@ behind every locked-in flag, and the
 
 ### Known bugs deferred past the 64-bit effort
 
-Tracks intentionally **not** part of the phase ladder (full detail in
-[BUILD_HISTORY.md](BUILD_HISTORY.md#known-bugs-deferred-past-the-64-bit-effort)):
-
-- **#1** — `times_masthead()` reads `month_names[-1]` at turn 0 (latent under the
-  turn-1 fixture; a Phase-5 sanitizer-class finding).
+The bugs originally recorded here are all **resolved** (full detail, with commit
+refs, in [BUILD_HISTORY.md](BUILD_HISTORY.md#known-bugs-deferred-past-the-64-bit-effort)):
+#1 (`month_names[-1]` at turn 0, `df5625c`), #2 (`construct_guard_fight_list`
+pointer-vs-box-id), #25 (EMOTE format-string injection, `b10ea4d`), and #24
+(non-literal formats). The one open build-quality find is **#28** — the
+`assert(FALSE)`-under-`NDEBUG` `release`-build breakage (`-Werror=return-type` +
+`-Wsometimes-uninitialized`), which also gates promoting `-Wuninitialized`.
 
 Post-ladder **warning-ratchet** promotions (driven to zero, then locked `-Werror`
 outside the phase ladder, per the [warning policy](BUILD_HISTORY.md#warning-policy)):
 `-Wchar-subscripts` (#27) and `-Wformat-nonliteral` (#24/#25, incl. the EMOTE
-format-string-injection fix). New build-quality finds since the ladder are tracked
-in **#28** (the `assert(FALSE)`-under-`NDEBUG` `release`-build breakage).
+format-string-injection fix).
 
 ## Worked examples / method
 

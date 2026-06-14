@@ -299,13 +299,14 @@ hashes every byte with sha256.
 Tracks intentionally **not** part of the phase ladder, recorded so they aren't
 lost:
 
-- **#1 — `month_names[-1]` at turn 0 (`times.c`), latent.** `times_masthead()`
-  reads `month_names[oly_month(sysclock)]`, where `oly_month(a) == ((a).turn-1) % 8`,
-  so at **turn 0** the index is `-1` → an out-of-bounds read (the array is 8
-  entries + a trailing `NULL` in `glob.c`). The shipped fixture is turn 1, so
-  `oly_month()==0` and the `asan-ubsan` run does **not** fire — but the defect is
-  present. Reproduce on a turn-0 DB; fix by guarding the index against turn
-  0/negative before indexing. A Phase-5 sanitizer-class finding.
+- **#1 — `month_names[-1]` at turn 0 (`times.c`). RESOLVED (`df5625c`).**
+  `times_masthead()` and `player_banner()` (`report.c`) read
+  `month_names[oly_month(sysclock)]`, where `oly_month(a) == ((a).turn-1) % 8`, so
+  at **turn 0** the index is `-1` → an out-of-bounds read (the array is 8 entries +
+  a trailing `NULL` in `glob.c`). Latent under the shipped turn-1 fixture
+  (`oly_month()==0`, in bounds), so `asan-ubsan` didn't fire — but it fires on any
+  turn-0 DB. Fixed by guarding the index against turn-0/negative before indexing.
+  A Phase-5 sanitizer-class finding.
 - **#2 — `construct_guard_fight_list` compares `fight *` to an `int` box-id
   (`combat.c`). RESOLVED.** `if (fights_lookup(l_a, (struct fight *)((long)i)) >= 0)`
   compared element pointers to a box-id cast to a pointer, so the lookup always
