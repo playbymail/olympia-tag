@@ -349,6 +349,24 @@ lost:
   locked in `olympia_compile_flags()` (portable; high security value — it stops a
   future EMOTE-style injection from compiling). Golden byte-identical on both
   presets throughout.
+- **#28 — `release`/`NDEBUG` build broken by `assert(FALSE)`-as-unreachable.
+  RESOLVED.** Legacy code marked unreachable `switch` defaults and function tails
+  with `assert(FALSE)`/`assert(0)`. Under `NDEBUG` (any release-type build)
+  `assert` is a no-op, so those paths fell through: 14 functions fell off their
+  end (`-Werror=return-type`, a hard failure — the `release` preset did not build)
+  and 13 switch-assigned variables were read uninitialized
+  (`-Wsometimes-uninitialized`). In `debug`/`asan-ubsan` (no `NDEBUG`) `assert(FALSE)`
+  is `noreturn`, so neither fired and the golden gate stayed green while `release`
+  was red. Fixed with `OLY_UNREACHABLE()` in `legacy.h`
+  (`do { assert(0); abort(); } while (0)` — keeps the debug diagnostic, `noreturn`
+  under `NDEBUG` too via `abort()`), applied to the 26 terminator-less sites; the
+  one non-assert site (`use.c` `being_taught()`'s `teacher`) got `= 0`. **Not** a
+  blanket `assert(0)` sweep — the other ~55 sites are in `void` functions or have
+  an explicit `assert(0); return x;` fallback and were left alone. `release` now
+  builds clean; `-Wuninitialized`/`-Wsometimes-uninitialized` are zero at every
+  `-O`. The flags are left **informational** (not `-Werror`) per the warning
+  policy — they're version-sensitive heuristics. Golden byte-identical on both
+  presets.
 
 ## Warning policy
 
@@ -425,9 +443,9 @@ inventory (deduped by `file:line:col`):
 | `-Wchar-subscripts` | 21 | **portability** (signed `char` index) | fixed + locked `-Werror` (#27) |
 | `-Wunused-function` | 20 | dead code | informational |
 | `-Wmissing-field-initializers` | 12 | benign (zero-init) | informational |
-| `-Wuninitialized` | 8 | **correctness** (UB) | fixed at `-O0`, flag **not** promoted (#26) |
+| `-Wuninitialized` | 8 | **correctness** (UB) | fixed all `-O` (#26 + #28), flag informational by choice |
 | `-Wsign-compare` | 5 | low (intent already covered by locked `sign-conversion`) | informational |
-| `-Wsometimes-uninitialized` | 3 | **correctness** (2 real defects) | fixed at `-O0`, flag **not** promoted (#26) |
+| `-Wsometimes-uninitialized` | 3 | **correctness** (2 real defects) | fixed all `-O` (#26 + #28), flag informational by choice |
 | `-Wpedantic` | 1 | ISO C nit | informational |
 
 **Decision.** The selected baseline *is* the targeted ratchet set in
@@ -455,15 +473,18 @@ commit.
   behavior change**, verified golden byte-identical because the turn-1 fixture
   does not exercise them (`c2.c` ferry fee `amount = ship_fee`; `move.c` admission
   `pl = player_controls_loc(...)`, whose only assignment was `#if 0`'d out;
-  `day.c` bounty dedup `item_animal_part(choice)`). The flag is **not** promoted
-  to `-Werror`: the class is zero only at `-O0`; `-O1`/`-O3` flow analysis
-  surfaces ~36 more latent "switch default falls through" sites across other
-  files, so a `-Werror` lock would break the release/asan builds. This is exactly
-  the opt-level/version instability the ratchet avoids — `-Wuninitialized` stays
-  **informational**. The ~36 (13 distinct) `-O1`+ sites are the `assert(FALSE)`
-  -as-unreachable idiom degrading under `NDEBUG`; they share a root cause with the
-  `release`-preset `-Werror=return-type` build failure and are tracked together in
-  **#28** (fixing it unblocks promoting `-Wuninitialized`).
+  `day.c` bounty dedup `item_animal_part(choice)`). At the time of #26 the class
+  was zero only at `-O0`; `-O1`/`-O3` flow analysis surfaced 13 more "switch
+  default falls through" sites — the `assert(FALSE)`-as-unreachable idiom
+  degrading under `NDEBUG`, which shared a root cause with the `release`-preset
+  `-Werror=return-type` build failure. Both were fixed together under **#28**
+  (`OLY_UNREACHABLE()` = `do { assert(0); abort(); } while (0)`, noreturn in every
+  build), so the class is now **zero at `-O0`/`-O1`/`-O3`** and the `release`
+  preset builds clean. Even so, `-Wuninitialized` is **deliberately left
+  informational** (not locked `-Werror`): it's a heuristic, compiler-version-
+  sensitive diagnostic, exactly the kind the #14 policy keeps out of the enforced
+  set to avoid a routine compiler upgrade breaking the build. The class being at
+  zero is a code-quality win, not a reason to lock a fragile flag.
 
 The remaining classes are style / dead-code / benign and are left **informational**
 — not tracked individually and not suppressed (they only appear if someone opts
