@@ -278,7 +278,7 @@ void check_all_auto_attacks(void);
 void clear_second_waits(void);
 int combat_comp(const void *a_ptr, const void *b_ptr);
 int d_pillage(struct command *c);
-int do_trap_attack(int who, int num_attacks, int chance);
+void do_trap_attack(int who, int num_attacks, int chance);
 int loc_target(int target);
 int regular_combat(int a, int b, int seize_slot, int already_waiting);
 int select_attacker(int who, int target);
@@ -665,7 +665,7 @@ int d_find_food(struct command *c);
 int v_find_food(struct command *c);
 
 /* relig.c */
-int add_piety(int who, int amount, int use_limit);
+void add_piety(int who, int amount, int use_limit);
 int check_loc_for_beasts(int where, int who);
 int d_arrange_mugging(struct command *c);
 int d_bless_fort(struct command *c);

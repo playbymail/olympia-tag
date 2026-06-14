@@ -270,6 +270,7 @@ d_destroy_art(struct command *c)
 	     box_name(c->who), box_name(item));
 
   destroy_unique_item(c->who, item);
+  return TRUE;
 };
 
 int
@@ -483,6 +484,7 @@ v_deep_identify(struct command *c)
 
   artifact_identify("You study the aura of this artifact "
 	 "and identify it as: ",c);
+  return TRUE;
 };
 /*
  *  Tue Oct 27 11:26:28 1998 -- Scott Turner

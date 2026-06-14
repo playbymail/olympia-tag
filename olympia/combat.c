@@ -4915,7 +4915,7 @@ int v_defense_tactics(struct command *c)
  *  Water elemental, boulder trap, etc.
  *
  */
-int do_trap_attack(int who, int num_attacks, int chance)
+void do_trap_attack(int who, int num_attacks, int chance)
 {
   int i, lost=0, num_defend, man;
   struct fight **l_a;

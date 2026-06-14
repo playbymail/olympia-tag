@@ -1009,6 +1009,7 @@ d_rally(struct command *c)
 
 	flush_unit_orders(player(mob), mob);
 	interrupt_order(mob);
+	return TRUE;
 }
 
 

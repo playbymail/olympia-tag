@@ -558,7 +558,7 @@ legitimate_offer(struct trade *t)
   assert(FALSE);
 };
 
-static int
+static void
 resolve_trades_here(int where)
 {
   trades_list sellers;
@@ -570,7 +570,7 @@ resolve_trades_here(int where)
    *  Do nothing if this is not a market.
    *
    */
-  if (!market_here(where)) return 0;
+  if (!market_here(where)) return;
   
   sellers = seller_list(where, 0);
   buyers = buyer_list(where, 0);

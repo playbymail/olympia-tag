@@ -1294,6 +1294,7 @@ v_identify(struct command *c)
 
   artifact_identify("You carefully read the runes on this artifact "
 	 "and identify it as: ",c);
+  return TRUE;
 };
 
 

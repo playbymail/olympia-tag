@@ -817,6 +817,7 @@ d_smuggle_goods(struct command *c)
     wout(c->who,"You are no longer smuggling goods.");
     return TRUE;
   };
+  return TRUE;
 };
 
 /*
