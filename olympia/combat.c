@@ -332,7 +332,7 @@ lead_char_pos(fights_list l)
 	if (l[1]->kind == FK_noble)
 		return 1;
 
-	assert(FALSE);
+	OLY_UNREACHABLE();
 }
 
 
@@ -1548,7 +1548,7 @@ find_defender(fights_list l, int man, fights_list enemy, int type)
     if (man <= 0) return l[i];
   }
 
-  assert(FALSE);
+  OLY_UNREACHABLE();
 }
 
 static int
@@ -1845,7 +1845,7 @@ find_attacker(fights_list l, int man, fights_list enemy, int type)
     if (man <= 0) return l[i];
   }
 
-  assert(FALSE);
+  OLY_UNREACHABLE();
 }
 
 /*

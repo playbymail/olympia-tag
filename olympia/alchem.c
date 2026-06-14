@@ -27,7 +27,7 @@ new_potion(int who)
 		break;
 
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 
 	set_name(new, s);

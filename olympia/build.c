@@ -1492,7 +1492,7 @@ repair_points(int k)
 	case sub_orc_stronghold:	return 1;
 	}
 
-	assert(FALSE);
+	OLY_UNREACHABLE();
 }
 
 

@@ -145,7 +145,7 @@ generate_one_treasure(int monster)
       case 8: name = "Distressed Lady";	break;
 
       default:
-	assert(FALSE);
+	OLY_UNREACHABLE();
       }
 
     pris = new_char(0, 0, monster, 100, indep_player,

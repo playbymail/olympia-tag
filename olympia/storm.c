@@ -1295,7 +1295,7 @@ fog_excuse(void)
 	case 2:	return "choked to death in the poisonous fog.";
 	case 3:	return "disappeared in the fog.";
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 }
 

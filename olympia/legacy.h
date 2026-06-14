@@ -10,7 +10,24 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>		/* abort() for OLY_UNREACHABLE() */
 #include "../lib/lists.h"
+
+/*
+ *  Mark a genuinely unreachable point -- e.g. a switch `default:` that every
+ *  real case avoids, or the tail of a function that returns from every real
+ *  path.  These were historically spelled `assert(FALSE)`, but under NDEBUG
+ *  (the release build) assert() expands to nothing, so control falls through:
+ *  the function falls off its end (-Werror=return-type) or a switch-assigned
+ *  variable is read uninitialized (-Wsometimes-uninitialized), and the
+ *  behavior becomes undefined.  OLY_UNREACHABLE() keeps the debug assertion
+ *  (file/line diagnostic, then abort) and is noreturn under NDEBUG as well via
+ *  abort(), so the compiler knows the path terminates in every build.  Use it
+ *  only where the old `assert(FALSE)` had no following terminator; sites that
+ *  already do `assert(FALSE); return x;` are intentional graceful fallbacks
+ *  and must stay as they are.
+ */
+#define OLY_UNREACHABLE() do { assert(0); abort(); } while (0)
 
 /* BUGFIX (modernization): forward declarations */
 struct command;

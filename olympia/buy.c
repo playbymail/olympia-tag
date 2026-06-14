@@ -228,7 +228,7 @@ reduce_qty(struct trade *t, int cost)
 		return min(t->qty, has);
 	}
 
-	assert(FALSE);
+	OLY_UNREACHABLE();
 }
 
 #ifndef NEW_TRADE
@@ -555,7 +555,7 @@ legitimate_offer(struct trade *t)
     return min(t->qty, has);
   };
 
-  assert(FALSE);
+  OLY_UNREACHABLE();
 };
 
 static void

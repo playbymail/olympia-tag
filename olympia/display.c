@@ -753,7 +753,7 @@ liner_desc(int n)
 	case T_storm:	return liner_desc_storm(n);
 
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 }
 

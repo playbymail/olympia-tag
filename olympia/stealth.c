@@ -802,12 +802,12 @@ d_petty_thief(struct command *c)
 		    break;
 
 		default:
-		  assert(FALSE);
+		  OLY_UNREACHABLE();
 		}
 		break;
 
 	      default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	      }
 
 	    if (third)

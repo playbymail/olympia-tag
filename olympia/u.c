@@ -251,7 +251,7 @@ loc_depth(int n)
 
 	default:
 		fprintf(stderr, "subkind is %d\n", subkind(n));
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 }
 
@@ -1385,7 +1385,7 @@ loyal_s(int who)
 		break;
 
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 
 	return sout("%s-%d", s, loyal_rate(who));

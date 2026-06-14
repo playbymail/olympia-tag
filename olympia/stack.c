@@ -45,7 +45,7 @@ here_precedes(int a, int b)
 		else if (p->here_list[i] == b)
 			return FALSE;
 
-	assert(FALSE);
+	OLY_UNREACHABLE();
 }
 
 
@@ -859,7 +859,7 @@ promote_after(int a, int b)
 	if (ret == b)
 		return FALSE;
 
-	assert(FALSE);
+	OLY_UNREACHABLE();
 }
 
 

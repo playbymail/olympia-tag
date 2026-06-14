@@ -819,7 +819,7 @@ v_forge_art_x(struct command *c)
       break;
 
     default:
-      assert(FALSE);
+      OLY_UNREACHABLE();
     }
   c->d = rare_item;
 

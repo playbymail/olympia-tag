@@ -288,7 +288,7 @@ create_bandit(int where)
 		break;
 
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 
 	new = create_monster_stack(item, rnd(4,9), where);

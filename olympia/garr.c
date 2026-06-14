@@ -851,7 +851,7 @@ v_decree(struct command *c)
 	case 1:		return v_decree_hostile(c);
 
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 }
 

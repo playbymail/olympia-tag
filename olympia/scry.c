@@ -549,7 +549,7 @@ d_locate_char(struct command *c)
 		break;
 
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 
 	if (rnd(1,100) > chance)
@@ -774,7 +774,7 @@ d_unbar_loc(struct command *c)
       break;
 
     default:
-      assert(FALSE);
+      OLY_UNREACHABLE();
     }
 
   if (rnd(1,100) > chance)

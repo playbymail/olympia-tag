@@ -124,7 +124,7 @@ d_undead_lord(struct command *c)
 	case 8:		rating = 250;	break;
 
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 
 	p_char(undead)->attack = (short)rating;

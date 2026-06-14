@@ -252,7 +252,7 @@ create_hades_nasty(void)
 	  break;
 		
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 
 	queue(new, "wait time 0");

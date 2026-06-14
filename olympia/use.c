@@ -1388,7 +1388,7 @@ exp_s(int level)
 	case exp_grand:		return "grand master";
 
 	default:
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 }
 
@@ -1919,7 +1919,7 @@ being_taught(int who, int sk, int *item, int *teach_bonus)
   int school = skill_school(sk);
   int where = subloc(who);
   struct entity_subloc *p = rp_subloc(where);
-  int teacher, loc, i;
+  int teacher = 0, loc, i;	/* #28: 0 = no teacher found by the loop below */
   struct command *c, *c2;
   int taught_specific = 0, taught_generic = 0;
   /* v_teach and v_study are declared in legacy.h */

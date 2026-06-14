@@ -273,7 +273,7 @@ exit_distance(int loc1, int loc2)
 			"exit_distance: subkind=%s, loc1=%d, loc2=%d, "
 			"w_d=%d, d_d=%d\n",
 			subkind_s[subkind(loc2)], loc1, loc2, w_d, d_d);
-		assert(FALSE);
+		OLY_UNREACHABLE();
 	}
 
 	return dist;
@@ -1187,7 +1187,7 @@ hidden_count_to_index(int which, exit_views_list l)
 		}
 	}
 
-	assert(FALSE);
+	OLY_UNREACHABLE();
 }
 
 
