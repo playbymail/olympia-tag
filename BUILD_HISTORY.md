@@ -231,8 +231,8 @@ only thing hiding the class (the same family as the already-fixed `times.c` #6,
 - **Full class locked.** Under Clang `-Wformat` pulls in `-Wformat-security`, so
   dropping `-Wno-format-security` too leaves no sub-suppression (the g2 model) —
   `-Werror=format` now covers the whole class. The non-literal sites that need a
-  real dynamic format remain under the separate `-Wformat-nonliteral` follow-up
-  (#24/#25; see [Known bugs](#known-bugs-deferred-past-the-64-bit-effort)).
+  real dynamic format were handled separately as `-Wformat-nonliteral` (#24/#25),
+  now resolved and locked `-Werror` (see [Known bugs](#known-bugs-deferred-past-the-64-bit-effort)).
 
 Source fixes (`37a4b74`, `1588b64`, `30ff71a`) and the flag flip (`cec1a78`) were
 separate commits; the few restored player strings were re-baselined in the same
@@ -320,20 +320,34 @@ lost:
   so no re-baseline was needed. The corrected behavior is not yet pinned by a
   regression fixture (no fixture triggers combat). Cross-engine parity tracked as
   olympia-g3 issue for refactoring G3 to a shared `contains_unit` helper.
-- **#24 / #25 — non-literal format strings (`-Wformat-nonliteral`).** Surfaced by
-  the Phase 9 scan but deliberately out of scope (`-Wformat-nonliteral` is not
-  part of `-Wformat` on Clang or GCC, so it is not covered by the `-Werror=format`
-  lock). 15 sites in three classes: runtime-constructed `sout()` formats in
-  `artifacts.c` (11), format-passed-as-parameter (`day.c`/`npc.c`, 3 — fixable by
-  annotating the enclosing function so callers are checked), and **#25, a real
-  security bug**: EMOTE (`v_emote`, `c1.c`) passes raw player input
-  (`c->parse[2]`) directly as the `wout()` format string — a textbook
-  format-string injection (CWE-134; `%n` is a stack-write primitive). #25 is split
-  out for independent priority; fix by treating the message as data
-  (`wout(target, "%s", c->parse[2])`). EMOTE isn't exercised by the turn-1
-  fixture, so the fix is expected golden byte-identical. Locking
-  `-Wformat-nonliteral` itself is deferred to the warning-ratchet policy (#14)
-  once Classes A/B are resolved or annotated.
+- **#24 / #25 — non-literal format strings (`-Wformat-nonliteral`). RESOLVED;
+  class now locked `-Werror`.** Surfaced by the Phase 9 scan but out of scope
+  there (`-Wformat-nonliteral` is not part of `-Wformat` on Clang or GCC, so it
+  was not covered by the `-Werror=format` lock). 15 sites in three classes, all
+  now resolved and the class driven to zero and promoted:
+  - **Class C / #25 — security (1).** EMOTE (`v_emote`, `c1.c`) passed raw player
+    input (`c->parse[2]`) straight to `wout()` as the format string — a textbook
+    format-string injection (CWE-134; `%n` is a stack-write primitive). Fixed in
+    `b10ea4d` by emitting the message as data with a literal format, while
+    preserving the one documented `%s`→target-name substitution.
+  - **Class A — trusted dynamic format (11), `artifacts.c`.** `describe_combat_artifact()`
+    / `artifact_identify()` assemble the `wout()` format at runtime from a `header`
+    literal + an `artifact_names[]` template (which carries the `%d`/`%s`); trusted
+    constants only, never player data, and each switch case supplies the matching
+    args. A restructure to inline literals would split the output and break golden,
+    so the sites are pragma-annotated in place (`#pragma GCC diagnostic ignored
+    "-Wformat-nonliteral"` + a justification comment).
+  - **Class B — format passed as a parameter (3), `day.c`/`npc.c`.** Every caller
+    passes a literal; the prototypes now carry `__attribute__((format(printf,2,0)))`
+    so callers are format-checked, and the forwarding sites are pragma-suppressed
+    (clang only auto-suppresses forwarded formats through `va_list`, not when
+    re-passed to `wout` with explicit args; the after-params attribute placement
+    trips `-Wgcc-compat`, so it's written as a separate prototype).
+
+  With the class at zero, `-Wformat-nonliteral -Werror=format-nonliteral` is now
+  locked in `olympia_compile_flags()` (portable; high security value — it stops a
+  future EMOTE-style injection from compiling). Golden byte-identical on both
+  presets throughout.
 
 ## Warning policy
 
@@ -379,10 +393,11 @@ This is exactly the method the Phase 1–10 ladder used.
      compares.
 
    `-Wno-format`/`-Wno-format-security` were **retired** in Phase 9 (the whole
-   format class is now enforced). These stay suppressed until someone opens a
-   dedicated cleanup track and drives the whole class to zero in one focused pass,
-   then promotes it — never partially. `-Wformat-nonliteral` is the one open
-   cleanup track of this kind (#24/#25), and is not yet suppressed *or* enforced.
+   format class is now enforced). `-Wformat-nonliteral` was the same kind of
+   dedicated cleanup track (#24/#25): driven to zero in one focused pass — trusted
+   dynamic formats pragma-annotated, forwarded-format wrappers given the `format`
+   attribute, the EMOTE injection fixed — then promoted to
+   `-Werror=format-nonliteral`.
 
 3. **Clang-only spellings.** `-Wshorten-64-to-32` (Phase 6),
    `-Wreturn-mismatch` (Phase 8), and `-Wimplicit-int-conversion` (Phase 10) are
@@ -451,8 +466,8 @@ commit.
 
 The remaining classes are style / dead-code / benign and are left **informational**
 — not tracked individually and not suppressed (they only appear if someone opts
-into the broad set locally). `-Wformat-nonliteral` (#24/#25) is the other open
-cleanup track, recorded above.
+into the broad set locally). `-Wformat-nonliteral` (#24/#25) was a separate cleanup
+track and is now **resolved and locked `-Werror`**, recorded above.
 
 **Triaging a new warning** (a compiler upgrade surfaces a new class, or a new
 file trips something):

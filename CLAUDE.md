@@ -170,10 +170,12 @@ Tracks intentionally **not** part of the phase ladder (full detail in
 
 - **#1** — `times_masthead()` reads `month_names[-1]` at turn 0 (latent under the
   turn-1 fixture; a Phase-5 sanitizer-class finding).
-- **#24 / #25** — non-literal format strings (`-Wformat-nonliteral`), out of scope
-  for the Phase 9 `-Werror=format` lock. #25 is a real **security** bug: EMOTE
-  (`v_emote`, `c1.c`) passes raw player input as a `printf` format string
-  (format-string injection).
+
+Post-ladder **warning-ratchet** promotions (driven to zero, then locked `-Werror`
+outside the phase ladder, per the [warning policy](BUILD_HISTORY.md#warning-policy)):
+`-Wchar-subscripts` (#27) and `-Wformat-nonliteral` (#24/#25, incl. the EMOTE
+format-string-injection fix). New build-quality finds since the ladder are tracked
+in **#28** (the `assert(FALSE)`-under-`NDEBUG` `release`-build breakage).
 
 ## Worked examples / method
 
