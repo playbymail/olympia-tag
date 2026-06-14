@@ -91,6 +91,13 @@ function(olympia_compile_flags tgt)
         # negative offset on high-bit bytes -- latent OOB / UB. All sites cast
         # to (unsigned char); driven to zero and locked. Portable (GCC too).
         -Wchar-subscripts -Werror=char-subscripts                        # ratchet (#27)
+        # A runtime (non-literal) printf-family format string. The security
+        # case: player-controlled format = format-string injection (the EMOTE
+        # bug, #25). Not part of -Wformat on Clang or GCC, so requested
+        # explicitly. Driven to zero (#24): legitimate dynamic formats built
+        # from trusted constants are pragma-annotated in-place; forwarded-format
+        # wrappers carry __attribute__((format(printf,...))). Portable (GCC too).
+        -Wformat-nonliteral -Werror=format-nonliteral                    # ratchet (#24/#25)
     )
 
     # Clang-only diagnostic spellings. GCC either folds each into a broader
