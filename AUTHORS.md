@@ -18,6 +18,7 @@ skills, effects, mining, ranger skills, and ship crafting, and descends from G3.
 The modernization work (warning-ladder phases, prototype conversion, golden
 harness, documentation) was carried out with help from AI coding assistants:
 
+- **Amp** (Sourcegraph) — <https://ampcode.com>
 - **Claude** (Anthropic) — <https://www.anthropic.com>
 
 All AI-assisted changes were reviewed and accepted by the human maintainer, and
