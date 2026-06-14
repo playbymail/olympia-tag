@@ -401,12 +401,12 @@ inventory (deduped by `file:line:col`):
 | `-Wunused-variable` | 204 | dead code | informational |
 | `-Wunused-parameter` | 44 | style (dispatch-table sigs) | informational |
 | `-Wunused-but-set-variable` | 32 | dead code | informational |
-| `-Wchar-subscripts` | 21 | **portability** (signed `char` index) | **candidate → #27** |
+| `-Wchar-subscripts` | 21 | **portability** (signed `char` index) | fixed + locked `-Werror` (#27) |
 | `-Wunused-function` | 20 | dead code | informational |
 | `-Wmissing-field-initializers` | 12 | benign (zero-init) | informational |
-| `-Wuninitialized` | 8 | **correctness** (UB) | **candidate → #26** |
+| `-Wuninitialized` | 8 | **correctness** (UB) | fixed at `-O0`, flag **not** promoted (#26) |
 | `-Wsign-compare` | 5 | low (intent already covered by locked `sign-conversion`) | informational |
-| `-Wsometimes-uninitialized` | 3 | **correctness** (2 real defects) | **candidate → #26** |
+| `-Wsometimes-uninitialized` | 3 | **correctness** (2 real defects) | fixed at `-O0`, flag **not** promoted (#26) |
 | `-Wpedantic` | 1 | ISO C nit | informational |
 
 **Decision.** The selected baseline *is* the targeted ratchet set in
@@ -419,14 +419,27 @@ non-goals: no warning-free-build requirement, no global `-Werror`.) Because no
 build flag changed, this evaluation has **no golden impact** and needed no flag-flip
 commit.
 
-**Promotion candidates identified** (high-value classes worth a future ratchet
-pass, each its own focused issue):
+**Promotion candidates — outcome** (each its own focused issue):
 
-- **#26** — `-Wuninitialized` / `-Wsometimes-uninitialized`: 2 confirmed real
-  uninitialized reads (`build.c:1440` partial-build `id`; `use.c:1310` dispatch
-  `ret`) plus a maybe-uninitialized set to audit.
-- **#27** — `-Wchar-subscripts`: signed-`char` array indices in `z.c`/`code.c`
-  (latent OOB on high-bit bytes).
+- **#27 — `-Wchar-subscripts`: fixed and promoted.** All 21 sites were a signed
+  `char` passed to the `tolower()` ctype macro (`z.c`/`code.c`); cast each to
+  `(unsigned char)` and locked `-Wchar-subscripts -Werror=char-subscripts` in the
+  portable block. The first post-64-bit ratchet promotion.
+- **#26 — `-Wuninitialized` / `-Wsometimes-uninitialized`: sources fixed, flag NOT
+  promoted.** All 11 sites the `-O0` inventory surfaced were fixed: six were
+  unambiguous missing initializers (`add.c` log strings → `""`, `build.c` dead
+  `id` → 0, `use.c` dispatch `ret` → `FALSE`, `storm.c` `aura_used` accumulator →
+  0 and a vestigial `wout(i,…n)` → `target`/`sum`); three required restoring
+  disabled/missing game logic and were taken as a **deliberate, approved
+  behavior change**, verified golden byte-identical because the turn-1 fixture
+  does not exercise them (`c2.c` ferry fee `amount = ship_fee`; `move.c` admission
+  `pl = player_controls_loc(...)`, whose only assignment was `#if 0`'d out;
+  `day.c` bounty dedup `item_animal_part(choice)`). The flag is **not** promoted
+  to `-Werror`: the class is zero only at `-O0`; `-O1`/`-O3` flow analysis
+  surfaces ~36 more latent "switch default falls through" sites across other
+  files, so a `-Werror` lock would break the release/asan builds. This is exactly
+  the opt-level/version instability the ratchet avoids — `-Wuninitialized` stays
+  **informational** (a deeper `-O2` sweep of the remaining sites is future work).
 
 The remaining classes are style / dead-code / benign and are left **informational**
 — not tracked individually and not suppressed (they only appear if someone opts
