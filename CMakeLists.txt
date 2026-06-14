@@ -8,10 +8,10 @@ set(CMAKE_C_EXTENSIONS OFF)
 # =============================================================================
 # Compiler-flag conventions (read before "tidying up" this file)
 # =============================================================================
-# The 32->64-bit modernization ladder is partway done. Phases 1-6 were triaged
+# The 32->64-bit modernization ladder is partway done. Phases 1-7 were triaged
 # to ZERO and locked as errors (Phase 6 = shorten-64-to-32 +
-# sizeof-pointer-memaccess); Phases 7-10 (sign-conversion,
-# return-type/return-mismatch, the format family, implicit-int-conversion) are
+# sizeof-pointer-memaccess; Phase 7 = sign-conversion); Phases 8-10
+# (return-type/return-mismatch, the format family, implicit-int-conversion) are
 # still suppressed and will be locked one phase at a time. See CLAUDE.md
 # "Modernization status" and doc/modernization-64bit-plan.md.
 #
@@ -74,6 +74,10 @@ function(olympia_compile_flags tgt)
         # no MD5 bzero(ctx, sizeof(ctx)) defect, so this class is already 0;
         # locked at zero. Portable (GCC understands it too).
         -Wsizeof-pointer-memaccess -Werror=sizeof-pointer-memaccess      # Phase 6 (#17)
+        # Implicit signed<->unsigned conversions: a negative int flowing into a
+        # size_t arg is a real hazard. All sites were counts/lengths provably
+        # >= 0, cast explicitly to (size_t). Portable (GCC understands it too).
+        -Wsign-conversion -Werror=sign-conversion                        # Phase 7 (#18)
     )
 
     # Clang-only diagnostic spellings; GCC folds each into a broader class
