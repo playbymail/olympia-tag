@@ -11,21 +11,28 @@ ship crafting. In the engine lineage it is the **newest**: it descends from G3
 (G3's `CLAUDE.md` calls G3 "the ancestor of the TAG engine"). This repo is a
 standalone CMake extraction of TAG from the original multi-engine monorepo.
 
-The code is legacy K&R-style C originally targeting **32-bit** systems, but the
-modernization effort here is **much further along than G1/G2/G3**: `olympia-tag`
-already builds clean under the **entire** strict C11 flag ladder (Phases 1–5)
-**plus AddressSanitizer/UBSan**, all `-Werror`, zero warnings. Read
+The code is legacy K&R-style C originally targeting **32-bit** systems. The
+C11/64-bit modernization effort is **complete**: `olympia-tag` builds clean under
+the **entire** strict warning ladder (Phases 1–10), all `-Werror`, zero warnings,
+and the golden flow runs clean under AddressSanitizer/UBSan. Read
 [Modernization status](#modernization-status) before changing build flags or
-touching prototypes — what's left here is *not* what was left on the older
-engines.
+touching prototypes — the full phase-by-phase record is in
+[BUILD_HISTORY.md](BUILD_HISTORY.md).
+
+> **This is a modernization project, not a development project — no new
+> features.** The goal is to preserve TAG's exact behavior while modernizing it
+> for 64-bit C11. **Golden output is the contract:** every change must keep the
+> golden gate byte-identical, and any behavior change must be deliberate,
+> justified, and re-baselined in the same commit. Gameplay tweaks and scope
+> expansion are out of bounds.
 
 > **One engine binary, no map generator.** Unlike G3 (three targets:
 > `olympia-g3`, `mapgen-g3`, `island-g3`), TAG builds a **single** target,
 > `olympia-tag`. There is no `mapgen/` directory and no map/island generator —
 > regenerating a map currently means borrowing `olympia-g3`'s generator (the
 > `run/olympia-tag.sh` `G3_MAPGEN_SEED_*` vars are a vestige of that). Vendoring
-> mapgen into this repo is tracked as **olympia-tag #3** (a separate repo was
-> considered and rejected); it pairs with the golden-gate Step 0.
+> mapgen into this repo is tracked as **#3** (a separate repo was considered and
+> rejected).
 
 ## Build
 
@@ -60,48 +67,48 @@ cmake --build .
 
 ## Test — golden snapshots
 
-> **The golden gate now exists (Step 0 done).** `tests/olympia/golden_check.sh`
-> hashes `run/olympia/lib` into a sorted sha256 **manifest**
-> (`tests/olympia/golden/manifest.sha256`, committed). The full `-r -S` turn is
-> re-enabled in `run/olympia-tag.sh` and runs with the `test-use-const-report-date`
-> flag so the Olympia Times masthead date is fixed and the manifest is
-> date-independent. Workflow:
->
-> ```bash
-> ./run/olympia-tag.sh            # extract fixtures (-i), run a full -r -S turn
-> ./tests/olympia/golden_check.sh # prints YES on a byte-identical match
-> ./tests/olympia/golden_check.sh --update   # re-baseline after a deliberate change
-> ```
->
-> Standing the gate up required fixing the bugs that kept a full turn from
-> completing deterministically — the `float_cloudlands()` hang (#4), the
-> `gm_report()` div-by-zero/null-deref cluster (#5), and a non-deterministic
-> Times-index write (#6). The post-turn DB is now reproducible across clean
-> rebuilds.
+`tests/olympia/golden_check.sh` hashes `run/olympia/lib` into a sorted sha256
+**manifest** (`tests/olympia/golden/manifest.sha256`, committed). The full
+`-r -S` turn in `run/olympia-tag.sh` runs with the `test-use-const-report-date`
+flag so the Olympia Times masthead date is fixed and the manifest is
+date-independent. Workflow:
 
-The contract is now the same as the other engines: any change must keep the
-manifest byte-identical, and a deliberate output change is re-baselined
-(`golden_check.sh --update`) in the same commit with a note on why.
+```bash
+./run/olympia-tag.sh            # extract fixtures (-i), run a full -r -S turn
+./tests/olympia/golden_check.sh # prints YES on a byte-identical match
+./tests/olympia/golden_check.sh --update   # re-baseline after a deliberate change
+```
+
+The contract is the same as the other engines: any change must keep the manifest
+byte-identical, and a deliberate output change is re-baselined
+(`golden_check.sh --update`) in the same commit with a note on why. The gate also
+stands under the `asan-ubsan` preset (`OLYMPIA_PRESET=asan-ubsan
+./run/olympia-tag.sh`) — `YES` plus zero sanitizer diagnostics. See
+[BUILD_HISTORY.md](BUILD_HISTORY.md#golden-gate) for how the gate was stood up
+(the never-run-turn fixes #4/#5/#6, the date flag, and the openrsync blind spot
+it sidesteps).
 
 ## Layout
 
 - `olympia/` — TAG engine sources (63 `.c`) and headers
-- `lib/` — shared support code (entity lists, tiles, roads, allocation, the
-  generic `plist`, …)
+- `lib/` — shared support code (entity lists, tiles, roads, allocation, …)
 - `tests/` — `olympia/fixtures/lib.tgz` (fixture DB) + the golden gate
   (`olympia/golden_check.sh`, `olympia/golden/manifest.sha256`)
 - `run/` — `olympia-tag.sh` driver + scratch run dir (`run/olympia/lib`)
-- `doc/` — assorted notes (`r.texi`). The modernization **playbook** is *not*
+- `doc/` — assorted notes (`r.texi`) + the 64-bit modernization plan
+  (`modernization-64bit-plan.md`). The shared prototype **playbook** is *not*
   vendored here — see [Worked examples](#worked-examples--method).
+- `CLAUDE.md` — working guidance (build, test, conventions)
+- `BUILD_HISTORY.md` — full phase-by-phase modernization record
+- `AUTHORS.md` — authors and credits
 
 ## Conventions
 
 - Legacy C style: tabs, ANSI prototypes for definitions, terse names. Match the
   surrounding file; don't reformat untouched code.
-- **Golden output is the contract** *(once the gate exists)*. Modernization
-  changes (dead-code removal, list-type audits) must produce byte-identical
-  output; a deliberate behavior change is re-baselined in the same commit with a
-  note.
+- **Golden output is the contract.** Modernization changes must produce
+  byte-identical output; a deliberate behavior change is re-baselined in the same
+  commit with a note.
 - Build config lives in `CMakeLists.txt`. As of Step A (#16) enforcement is via
   a single consolidated `olympia_compile_flags()` helper applied to
   `olympia-tag`; sanitizers are wired separately through
@@ -122,135 +129,73 @@ manifest byte-identical, and a deliberate output change is re-baselined
 
 ## Modernization status
 
-**TAG is already through Phase 5.** All of the following are `-Werror` on
-`olympia-tag` and measure **0** in a clean build (81 TUs, verified):
+The C11/64-bit modernization ran as a phased warning ladder and is **complete**
+(epic #15). Every targeted warning class is enforced as `-Werror` via
+`olympia_compile_flags()` in `CMakeLists.txt` (applied to the single `olympia-tag`
+target), and the golden flow runs clean under AddressSanitizer +
+UndefinedBehaviorSanitizer. The per-phase scaffolding has been removed; the
+remaining work is the actual 32→64-bit refactoring the ladder cleared the way for.
 
-| Phase | Scope | State |
-|-------|-------|-------|
-| 1 | `int-to-pointer-cast`, `pointer-to-int-cast` | ✅ enforced |
-| 2 | `incompatible-pointer-types` | ✅ enforced |
-| 3 | `int-conversion` | ✅ enforced |
-| 4 | `strict-prototypes`, `missing-prototypes`, `implicit-function-declaration` | ✅ enforced (prototypes live in per-module headers; there is **no** generated `proto.h`, and there are **0** K&R/empty-paren defs) |
-| 5 | `missing-declarations` + ASan/UBSan | ✅ `missing-declarations` enforced; ASan/UBSan available via the `asan-ubsan` preset (`OLYMPIA_SANITIZE=ON`) |
+Enforced classes (all `-Werror`):
 
-So, unlike G1/G2/G3, the prototype/declaration work is **done**. The remaining
-runway is short and specific:
+| Phase | Scope |
+|-------|-------|
+| 1 | `int-to-pointer-cast`, `pointer-to-int-cast` |
+| 2 | `incompatible-pointer-types` |
+| 3 | `int-conversion` |
+| 4 | `strict-prototypes`, `missing-prototypes`, `implicit-function-declaration` (per-module headers; no `proto.h`) |
+| 5 | `missing-declarations` + sanitizers verified against the golden flow |
+| 6 | `shorten-64-to-32` (Clang-guarded) + `sizeof-pointer-memaccess` |
+| 7 | `sign-conversion` |
+| 8 | `return-type` + `return-mismatch` (Clang-guarded) |
+| 9 | `format` / vararg checking, full class incl. format-security (#12) |
+| 10 | `implicit-int-conversion` (Clang-guarded, code-quality — not a 64-bit hazard) |
 
-1. ~~**Step 0 — establish the golden gate**~~ ✅ **done** (the gate exists; see below).
-2. **Phase 3.6 — audit the typed-list migration, then retire the now-unused `plist`.**
-3. **Check the four issues filed on the G3 repo** against TAG.
+Phases 1–5 were done before the epic; Step A (#16) consolidated the flags and
+wired the sanitizer helper, Phases 6–10 (#17/#18/#19/#12/#20) drove the rest of
+the ladder, and Step B (#21) is this documentation closeout. A deterministic
+newsletter date keeps the goldens reproducible.
 
-Do them in that order: the gate must exist before the plist deletion or any
-issue fix, so byte-identical (or deliberately re-baselined) output can be proven.
+**Before changing build flags, prototypes, or headers, read
+[BUILD_HISTORY.md](BUILD_HISTORY.md)** — it has the full phase-by-phase record,
+the traps each class hid (and the TAG-specific divergences: the single target, the
+MD5 RNG inlined in `z.c`, the feature-code format/return sites), the rationale
+behind every locked-in flag, and the
+[warning policy](BUILD_HISTORY.md#warning-policy) for triaging new warnings.
 
-### Step 0 — Golden gate ✅ DONE
+### Known bugs deferred past the 64-bit effort
 
-The gate is established and green. `tests/olympia/golden_check.sh` (adapted from
-G3) hashes `run/olympia/lib` into a sorted sha256 **manifest**
-(`tests/olympia/golden/manifest.sha256`, committed). The full `-r -S` turn is
-re-enabled in `run/olympia-tag.sh` and runs with the **`test-use-const-report-date`**
-flag (ported from G3 commit `dfd668c`: a global pulled out of `argv` by `main()`
-*before* `getopt()`, which makes `times.c` emit a fixed masthead date) so the
-manifest is date-independent. Two clean rebuilds produce a byte-identical
-post-turn DB — `golden_check.sh` prints `YES`.
+Tracks intentionally **not** part of the phase ladder (full detail in
+[BUILD_HISTORY.md](BUILD_HISTORY.md#known-bugs-deferred-past-the-64-bit-effort)):
 
-Standing it up was **not** a pure copy of G3's gate: TAG's `-r -S` turn had never
-run to completion, and re-enabling it surfaced three never-exercised defects that
-had to be fixed first (all re-baselined with the gate):
-
-- **#4** `float_cloudlands()` infinite placement loop (`cloud.c`) — the turn hung
-  here, so nothing past it had ever executed.
-- **#5** `gm_report()` div-by-zero + null-deref cluster (`gm.c`) — the GM stats
-  reports (`main.c:420`, every turn) had never run.
-- **#6** Times-index `%02d` missing-argument write (`times.c:504`) — the one
-  non-deterministic file (garbage vararg) standing between two clean runs.
-
-To re-baseline after a deliberate output change: `./run/olympia-tag.sh` then
-`./tests/olympia/golden_check.sh --update`, committed with a note.
-
-### Phase 3.6 — Audit the typed-list migration, then retire the unused `plist`
-
-`plist` (`typedef void **plist` in `lib/lists.h` + `lib/plist.c`) is **already
-unused dead code** in the TAG engine — `grep -rnE
-'plist_(len|clear|reclaim|lookup|append|prepend|insert|copy|delete)|\(plist\)'
-olympia/ lib/` (excluding `lib/plist.c` and `lib/lists.h`) comes back **empty**;
-the engine already uses the element-typed lists (`fights_list`, `trades_list`,
-`exit_views_list`, …). So retiring `plist` is mostly a **dead-file deletion**,
-not the field-by-field migration G3 did in its issue #2.
-
-**But do not assume the migration was done correctly — audit it first.** G1, G2,
-*and* G3 were each burned by exactly this class of bug: an accessor/element-type
-mismatch the compiler cannot catch through `void **` (a typed pointer list read
-with `ilist`/`plist` accessors reads the wrong header word and runs off the end).
-G3's startup segfault (its issue #1) was precisely a `plist`-queried-as-`ilist`
-mismatch hiding in the `loop.h` macros, an `exit_view **` cluster, and an
-inventory `qsort`. Before you delete anything:
-
-- **Audit every list site and loop macro for accessor/element-type consistency:**
-  - `olympia/loop.h` — the `loop_*` macros declare `ilist ll_l` and iterate with
-    `ilist_len`/`ilist_reclaim`. Confirm each one genuinely backs an `int` list,
-    not a typed pointer list being read as an `ilist`.
-  - `exits_from_loc_nsew*` (`olympia/dir.c`) and *every* consumer — confirm the
-    returned list's element type and that each caller iterates it with the
-    matching `*_len`/`*_clear`/`*_reclaim`.
-  - inventory/sort sites (e.g. `report.c` qsort lengths) — confirm the `*_len`
-    matches the list's real element type.
-  - Run the turn under the `asan-ubsan` preset
-    (`OLYMPIA_PRESET=asan-ubsan ./run/olympia-tag.sh`) — a wrong-header over-read
-    trips the sanitizer.
-- **Then delete:** `lib/plist.c`, the `typedef void **plist` and the `plist_*`
-  decls in `lib/lists.h`, and the `lib/plist.c` entry in the `olympia-tag`
-  `target_sources`. Confirm a clean build, golden green, and ASan-clean. This
-  makes the issue-1 bug class a **compile error** — there is no `plist` type left
-  to mis-cast through.
-
-> Caution on dead-file removal more broadly: TAG's dead set differs from G3's.
-> `lib/ring_buffer.c` is present but **not** in `target_sources` (dead, as in
-> G3). But `lib/effects.c` and `lib/entity_builds.c` — which G3 deleted as dead
-> in its Phase 3.5 — are **live in TAG** (used by `io.c`/`effect.c`/`display.c`).
-> Grep each basename against `CMakeLists.txt` and the tree yourself; don't copy
-> G3's deletion list.
-
-### Open issues to check (filed on the G3 repo)
-
-Four issues were filed on `playbymail/olympia-g3`. TAG shares ancestry, so the
-agent should check each against TAG (read the full bodies with
-`gh issue view <N> --repo playbymail/olympia-g3`):
-
-| G3 issue | Applies to TAG? | Where / what to do |
-|----------|-----------------|--------------------|
-| **#1** startup segfault (`plist` queried as `ilist` in `post_production`/`location_trades`) | **Likely NO** | TAG's turn already runs to completion under ASan with no crash, and `plist` is unused. Treat as *verify-only*: the Phase 3.6 audit above is the confirmation. |
-| **#2** retire the generic `plist` | **YES — but trivial** | This *is* Phase 3.6 above. On TAG it's an audit + dead-file delete, not G3's field-by-field migration (which TAG already effectively has). |
-| **#3** `month_names[]` out-of-bounds read in the masthead (ASan global-buffer-overflow) | **YES — confirmed latent** (tracked as **olympia-tag #1**) | `times_masthead()` (`times.c:144`/`149`) reads `month_names[oly_month(sysclock)]`; `oly_month(a) == ((a).turn-1) % 8`, so at **turn 0** it is `-1` → `month_names[-1]` (array is 8 entries + `NULL` at `glob.c:446`). The shipped fixture is turn 1, so `oly_month()==0` and the `asan-ubsan` `-i` run does *not* fire — but the defect is present. Reproduce on a turn-0 DB; fix by guarding the index against turn 0/negative before indexing. |
-| **#4** `construct_guard_fight_list` compares `fight *` pointers to an `int` box-id (guard never fires) | **YES — present** (tracked as **olympia-tag #2**) | `combat.c:1113`: `if (fights_lookup(l_a, (struct fight *)((long)i)) >= 0)` — compares element pointers to a box-id cast to a pointer, so the lookup always returns `-1` and the "don't count a guarding unit already in `l_a`" guard never fires. Fix = a `l_a[j]->unit == i` membership scan (`struct fight` has `int unit`). This **changes combat resolution → changes golden output**, so do it **after** the gate exists and re-baseline with a note. |
-
-### Phase 5 — already enforced
-
-`-Werror=missing-declarations` is on and measures 0, and ASan/UBSan run via the
-`asan-ubsan` preset (`OLYMPIA_PRESET=asan-ubsan ./run/olympia-tag.sh`). The live
-work here is reactive: chase any ASan/UBSan finding
-that surfaces during the turn, and keep the sanitizer-clean property as you do
-Phase 3.6 and the issue fixes. One memory-safety defect is already tracked —
-**olympia-tag #1** (`month_names[-1]` at turn 0; latent with the turn-1 fixture,
-see the issues table above).
+- **#1** — `times_masthead()` reads `month_names[-1]` at turn 0 (latent under the
+  turn-1 fixture; a Phase-5 sanitizer-class finding).
+- **#2** — `construct_guard_fight_list` compares `fight *` to an `int` box-id, so
+  the guard never fires; fixing it **changes combat resolution → changes golden**,
+  so it is deferred and re-baselined with a note when done.
+- **#24 / #25** — non-literal format strings (`-Wformat-nonliteral`), out of scope
+  for the Phase 9 `-Werror=format` lock. #25 is a real **security** bug: EMOTE
+  (`v_emote`, `c1.c`) passes raw player input as a `printf` format string
+  (format-string injection).
 
 ## Worked examples / method
 
-G1, G2, and G3 are each done through Phase 4 (G3 also has the sanitizer/date-flag
-work). The shared method, every prototype trap, the **golden-gate Step 0**, and
-the **date-stamped-output / `test-use-const-report-date`** trick all live in:
+The shared method, every prototype trap, the golden-gate mechanism, and the
+`test-use-const-report-date` date trick live in the sibling playbook (not vendored
+here):
 
 ```
 ../olympia-g3/doc/modernization-prototypes-playbook.md
 ```
 
-It is **not** vendored into this repo — read it there, or copy it into TAG's
-`doc/` if you want it local. G3's `CLAUDE.md` "Modernization status" and its
-`Phase 4:` / `test-use-const-report-date` commits are the closest worked example.
+TAG's own per-phase write-up — including how it diverged from the siblings — is in
+[BUILD_HISTORY.md](BUILD_HISTORY.md); the original ladder plan is in
+[doc/modernization-64bit-plan.md](doc/modernization-64bit-plan.md).
 
-**But re-probe; don't assume sibling parity.** TAG already differs from G3 in
-ways that matter: one target (no mapgen/island), sanitizers gated on the
-`asan-ubsan` preset, `plist` already unused, prototypes via per-module headers (no `proto.h`),
-and `effects.c`/`entity_builds.c` **live** here though dead in G3. Every engine
-in this lineage has quietly diverged from its sibling — verify TAG's actual state
-(build it, grep it, run it under ASan) rather than porting assumptions.
+**Re-probe; don't assume sibling parity.** TAG differs from G3 in ways that
+matter: one target (no mapgen/island), sanitizers gated on the `asan-ubsan`
+preset, the `plist` already retired, prototypes via per-module headers (no
+`proto.h`), and `effects.c`/`entity_builds.c` **live** here though dead in G3.
+Every engine in this lineage has quietly diverged from its sibling — verify TAG's
+actual state (build it, grep it, run it under ASan) rather than porting
+assumptions.
