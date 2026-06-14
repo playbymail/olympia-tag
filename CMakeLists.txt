@@ -8,13 +8,12 @@ set(CMAKE_C_EXTENSIONS OFF)
 # =============================================================================
 # Compiler-flag conventions (read before "tidying up" this file)
 # =============================================================================
-# The 32->64-bit modernization ladder is partway done. Phases 1-9 were triaged
-# to ZERO and locked as errors (Phase 6 = shorten-64-to-32 +
-# sizeof-pointer-memaccess; Phase 7 = sign-conversion; Phase 8 = return-type +
-# return-mismatch; Phase 9 = the full format class, incl. format-security);
-# Phase 10 (implicit-int-conversion) is still suppressed and will be locked
-# next. See CLAUDE.md "Modernization status" and
-# doc/modernization-64bit-plan.md.
+# The 32->64-bit modernization ladder is complete. Phases 1-10 were triaged
+# to ZERO and locked as errors (the full ladder); none remain suppressed
+# (Phase 6 = shorten-64-to-32 + sizeof-pointer-memaccess; Phase 7 =
+# sign-conversion; Phase 8 = return-type + return-mismatch; Phase 9 = the full
+# format class, incl. format-security; Phase 10 = implicit-int-conversion).
+# See CLAUDE.md "Modernization status" and doc/modernization-64bit-plan.md.
 #
 # 1. Enforced classes are written as an explicit pair, one class per line:
 #        -Wfoo -Werror=foo
@@ -23,7 +22,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 #    and locked. Do NOT collapse these to bare -Werror=foo.
 #
 # 2. -Wno-foo suppressions are legacy idioms this ~80K-line codebase still
-#    relies on, or warning classes not yet chased down (the Phase 6-10 set).
+#    relies on (no ladder class remains suppressed).
 #
 # The shared warning set is applied to the single olympia-tag target via
 # olympia_compile_flags(), with optional sanitizers via
@@ -54,9 +53,6 @@ function(olympia_compile_flags tgt)
         -Wno-non-literal-null-conversion
         -Wno-parentheses
         -Wno-tautological-constant-out-of-range-compare
-
-        # --- Not yet chased down: Phase 10 of the ladder (still suppressed) ---
-        # (implicit-int-conversion; Clang-guarded, locked last.)
 
         # --- Modernization classes triaged to 0 and locked (CLAUDE.md) ---
         -Wint-to-pointer-cast -Werror=int-to-pointer-cast                # Phase 1
@@ -107,6 +103,11 @@ function(olympia_compile_flags tgt)
             # unknown positive -W* aborts the compile) -- so keep it Clang-only to
             # keep GCC <=13 building. No coverage lost.
             -Wreturn-mismatch -Werror=return-mismatch                    # Phase 8 (#19)
+            # int narrowed into a short/schar/char entity field. Representation-preserving
+            # (identical on ILP32/LP64), so a code-quality lock, not a 64-bit hazard. Made
+            # explicit with (short)/(schar)/(char) casts. Clang-only spelling (GCC folds it
+            # into -Wconversion); keep guarded so GCC keeps building.
+            -Wimplicit-int-conversion -Werror=implicit-int-conversion        # Phase 10 (#20)
         )
     endif()
 endfunction()
