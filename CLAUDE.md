@@ -126,6 +126,10 @@ it sidesteps).
   `../olympia-g2` / `../olympia-g3`. Not part of the 64-bit modernization effort.
 - **No CI.** Both golden gates are run locally (maintainer decision); warning
   enforcement is not wired into CI.
+- **Never create a branch until we're ready to start working PRs.** Work lands
+  directly on `main` (as the modernization history shows); don't spin up a feature
+  branch for routine fixes/docs. Only branch once we've explicitly decided to open
+  a PR.
 
 ## Modernization status
 
