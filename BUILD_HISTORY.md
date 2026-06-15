@@ -367,6 +367,66 @@ lost:
   `-O`. The flags are left **informational** (not `-Werror`) per the warning
   policy — they're version-sensitive heuristics. Golden byte-identical on both
   presets.
+- **#29 — `OLY_ASSERT`/`assert(FALSE)`-under-`NDEBUG` audit (follow-up to #28).
+  RESOLVED.** The deeper design review and full classification #28 deferred.
+  Three outcomes:
+  - **Helper design — confirmed as-is, no rename/respelling.** `OLY_UNREACHABLE`
+    reads best at the sites (a switch `default:` / function tail is *unreachable*,
+    not an asserted *condition* — so it beats `OLY_ASSERT`, and it's a
+    can't-happen marker, not a runtime error path, so it beats `oly_panic`). The
+    `noreturn`-in-both-configs property comes for free from `abort()` (declared
+    `_Noreturn` in `<stdlib.h>`), which already satisfies `-Werror=return-type` on
+    **both** Clang and GCC — no explicit attribute is needed (and a bare macro
+    can't carry one without becoming a helper function, which buys nothing here).
+    `abort()` is kept over `__builtin_unreachable()` deliberately: the contract is
+    **fail-loud** (defined abort on a corrupt state), not "let the optimizer assume
+    this can't happen" (which would make a wrongly-reached site UB) — the debug
+    `assert(0)` still fires first for the file/line diagnostic.
+  - **Full 56-site classification (table below).** Every remaining `assert(FALSE)`
+    is **(a)** already terminated, **(b)** a `void`/graceful or dead-code site, or
+    **(c)** a genuinely-unreachable `switch` default. The audit proved **no
+    *mandatory* conversions remain**: the `release` preset builds clean
+    (`-Werror=return-type` is CFG-based, not opt-level-sensitive, so any non-`void`
+    function that could fall off its end would fail it — none do), and Clang
+    reports **zero** `-Wuninitialized`/`-Wsometimes-uninitialized` at `-O0`/`-O1`/
+    `-O3` under `NDEBUG`. #28 had already fixed every site where the fall-through
+    is *unconditional*; what remained never *definitely* reads uninitialized under
+    Clang (each has an intervening conditional escape, is `void`, is dead code —
+    e.g. `move.c` `check_captain_loses_sailors` has an unconditional early
+    `return;` above its switch — or is under `#if 0`).
+  - **4 defensive conversions (bucket (c), opt-in).** Four `switch (rnd(1,N))`
+    defaults with every `1..N` case present, where a variable assigned in the
+    cases is read after the switch: `art.c:756` (`new_name`), `c1.c:977`/`c1.c:1013`
+    (`n`), `quest.c:478` (`s`). These are **mathematically unreachable**, so Clang
+    stays silent (the use sits behind a later conditional, so it's not
+    *sometimes*-uninitialized) — but GCC's `-Wmaybe-uninitialized` would flag them,
+    and they are the exact `assert(FALSE)`-as-unreachable idiom #28 fixed.
+    Converted to `OLY_UNREACHABLE()` for defensive consistency: provably
+    byte-identical (the default cannot be taken; not exercised by the turn-1
+    fixture), pre-empting the latent cross-compiler hazard. The two *defensive*
+    enum/kind defaults that read a var after (`art.c:889` `c->use_skill`,
+    `input.c:348` `bx[]->kind`) were **left as-is** — their `default:` is
+    reachable-in-principle (an unexpected value), so converting would change the
+    error-path behavior rather than mark a true impossibility. `swear.c:499`
+    (`bribe_thresh = 0`) is already initialized. **No** blanket sweep (the issue's
+    ⚠ constraint) — only the four provably-unreachable `rnd(1,N)` sites moved.
+    `-Wuninitialized` stays **informational** (not promoted): per the #14 policy
+    it's a version/compiler-sensitive heuristic, and GCC would still surface the
+    deliberately-unconverted reachable-in-principle defaults. Golden byte-identical
+    on `debug` + `asan-ubsan`, sanitizer-clean; `release` builds clean.
+
+  **`assert(FALSE)` site classification** (56 total; the engine has 0 `assert(0)`
+  literals — `FALSE` is the engine boolean). After #29 there are 30
+  `OLY_UNREACHABLE()` sites (26 from #28 + 4 here) and 52 live `assert(FALSE)`
+  sites (56 minus the 4 converted, minus `z.c:1041` commented out and `u.c:1649`
+  under `#if 0`, plus those two still grep-match):
+
+  | Bucket | What | Disposition | Sites |
+  |--------|------|-------------|-------|
+  | (a) terminated | `assert(FALSE)` followed by `return`/`break`/`continue`, or dead after a preceding `return` | leave alone | `basic.c:55,979`, `c1.c:198`, `day.c:864`, `display.c:1179`, `garr.c:419`, `move.c:295,2372`, `relig.c:276`, `report.c:1778`, `quest.c:605,613,623`, `swear.c:583`, `use.c:850,1350` |
+  | (b) void / graceful / dead | `void`-function fallthrough, defensive error-check that intentionally continues, or non-compiled code | leave alone | `basic.c:213`, `c1.c:1360,1682`, `code.c:664,738`, `combat.c:4028`, `day.c:122,1495`, `dir.c:759`, `gm.c:693`, `input.c:764`, `io.c:2963`, `kill.c:187,427,580,587`, `lore.c:43`, `move.c:2172` (dead: early `return`), `npc.c:1843`, `perm.c:309,345`, `report.c:1782`, `sout.c:159,342`, `storm.c:127,368,1701`, `swear.c:439,499`, `use.c:503,554`, `quest.c:567` (`#if 0`), `u.c:1649` (`#if 0`), `z.c:1041` (commented) |
+  | (c) unreachable `switch` default, var read after — **converted** | `switch (rnd(1,N))` with all cases present | → `OLY_UNREACHABLE()` (this issue) | `art.c:756`, `c1.c:977`, `c1.c:1013`, `quest.c:478` |
+  | (c′) defensive enum/kind default, var read after — **left** | `default:` reachable-in-principle (unexpected value) | leave alone (converting would change error-path behavior) | `art.c:889`, `input.c:348` |
 
 ## Warning policy
 

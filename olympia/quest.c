@@ -475,7 +475,7 @@ make_teach_book(int who, int rare, int category, int subkind)
       case 4: strcpy(s,"ancient manual"); break;
 	
       default:
-	assert(FALSE);
+	OLY_UNREACHABLE();
       }
       set_name(new, s);
     };

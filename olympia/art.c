@@ -753,7 +753,7 @@ d_forge_aura(struct command *c)
       new_name = "Jeweled crown";
       break;
     default:
-      assert(FALSE);
+      OLY_UNREACHABLE();
     }
   } else {
     new_name = str_save(c->parse[2]);

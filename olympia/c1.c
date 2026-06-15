@@ -974,7 +974,7 @@ equip_new_noble(int who, int new)
 				break;
 
 			default:
-				assert(FALSE);
+				OLY_UNREACHABLE();
 			}
 		}
 
@@ -1010,7 +1010,7 @@ equip_new_noble(int who, int new)
 			break;
 
 		default:
-			assert(FALSE);
+			OLY_UNREACHABLE();
 		}
 
 		gen_item(new, n, qty);

@@ -169,11 +169,16 @@ The bugs originally recorded here are all **resolved** (full detail, with commit
 refs, in [BUILD_HISTORY.md](BUILD_HISTORY.md#known-bugs-deferred-past-the-64-bit-effort)):
 #1 (`month_names[-1]` at turn 0, `df5625c`), #2 (`construct_guard_fight_list`
 pointer-vs-box-id), #25 (EMOTE format-string injection, `b10ea4d`), #24
-(non-literal formats), and #28 (the `assert(FALSE)`-under-`NDEBUG` `release`-build
+(non-literal formats), #28 (the `assert(FALSE)`-under-`NDEBUG` `release`-build
 breakage — fixed with `OLY_UNREACHABLE()` in `legacy.h`, so the `release` preset
 builds clean and `-Wuninitialized`/`-Wsometimes-uninitialized` are zero at every
 `-O`; the flags are left **informational**, not `-Werror`, as they're
-version-sensitive heuristics the warning policy keeps unenforced).
+version-sensitive heuristics the warning policy keeps unenforced), and #29 (the
+follow-up audit: `OLY_UNREACHABLE` confirmed as the right helper — keep the name,
+`abort()` over `__builtin_unreachable()` for fail-loud, no extra `noreturn`
+attribute needed — plus a full 56-site `assert(FALSE)` classification showing no
+*mandatory* conversions remain; 4 mathematically-unreachable `switch (rnd(1,N))`
+defaults were converted defensively to pre-empt GCC `-Wmaybe-uninitialized`).
 
 Post-ladder **warning-ratchet** promotions (driven to zero, then locked `-Werror`
 outside the phase ladder, per the [warning policy](BUILD_HISTORY.md#warning-policy)):
