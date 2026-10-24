@@ -104,9 +104,8 @@ Inputs live in `tests/mapgen/fixtures/`; `run/mapgen/` output is gitignored.
 Both checks honor `OLYMPIA_PRESET` (run them under `asan-ubsan` too).
 `secret-sea-route/EXPECT.sha256` differs from G3's only in `loc` (the `field`
 rename). Generated output is **not** part of the engine golden gate: the
-fixture DB has no map, and a generated world also needs `lib/log/` to exist
-before the first turn (world seeding in `load_db()` logs before
-`open_logfile()` creates it).
+fixture DB has no map. (A generated world runs its first turn as-is since #30,
+which sets up `lib/log/` before `load_db()`'s world seeding writes GM messages.)
 
 ## Layout
 

@@ -151,6 +151,7 @@ open_fp(struct fp_ent *p, int player)
 
 	sprintf(fnam, "%s/log/%d", libdir, player);
 
+	open_logfile_nondestruct();	/* a write can precede open_logfile() (#30) */
 	p->fp =	fopen(fnam, "a+");
 	if (p->fp == NULL)
 	{
@@ -229,6 +230,7 @@ open_logfile(void)
 	if (immediate)
 		return;
 
+	close_logfile();	/* no cached handle may outlive the rm (#30) */
 	system(sout("rm	-rf %s/log", libdir));
 	mkdir(sout("%s/log", libdir), 0755);
 }

@@ -210,6 +210,16 @@ main(int argc, char **argv)
 	 */
 	lock_tag();
 
+	/*
+	 *  Set up the turn's log directory before load_db(): first-time world
+	 *  initialization (post_production -> update_markets -> add_scrolls)
+	 *  writes GM messages, which belong in this turn's GM report (#30).
+	 *  With -E the wipe stays after read_spool() so eat acks don't leak
+	 *  into the turn.
+	 */
+	if (run_flag && !unspool_first_flag)
+		open_logfile();
+
 	load_db();
 
 	/*
@@ -383,9 +393,9 @@ main(int argc, char **argv)
 	    mkdir(sout("%s/spool", libdir), 0777);
 	    chmod(sout("%s/spool", libdir), 0777);
 	    read_spool(mail_now);
+	    open_logfile();
 	  };
 
-		open_logfile();
 		open_times();
 
 		show_day = TRUE;
