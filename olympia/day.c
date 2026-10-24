@@ -3421,13 +3421,11 @@ daily_events(void)
 	static int faery_day = 0;
 #endif 
 
-#ifdef NEW_TRADE
 	/*
 	 *  Run the markets.
 	 *
 	 */
 	match_all_trades();
-#endif 
 
 	if (curse_erode_day == 0)
 		curse_erode_day = rnd(1, MONTH_DAYS);

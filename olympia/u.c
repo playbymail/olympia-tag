@@ -1688,9 +1688,6 @@ add_item(int who, int item, int qty)
 
 			bx[who]->items[i]->qty += qty;
 
-#ifndef NEW_TRADE
-			investigate_possible_trade(who, item, old);
-#endif NEW_TRADE
 			return;
 		}
 
@@ -1700,9 +1697,6 @@ add_item(int who, int item, int qty)
 
 	item_ents_append(&bx[who]->items, new);
 
-#ifndef NEW_TRADE
-	investigate_possible_trade(who, item, 0);
-#endif NEW_TRADE
 }
 
 

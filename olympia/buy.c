@@ -119,14 +119,6 @@ seller_list(int where, int except)
 	}
 	next_char_here;
 
-#ifndef NEW_TRADE	
-	/*
-	 *  Sort before city.
-	 *
-	 */
-	if (ilist_len(l) > 0)
-		qsort(l, trades_len(l), sizeof(struct trade *), seller_comp);
-#endif NEW_TRADE
 
 	loop_trade(where, t)
 	{
@@ -135,14 +127,12 @@ seller_list(int where, int except)
 	}
 	next_trade;
 
-#ifdef NEW_TRADE	
 	/*
 	 *  Sort after everyone, not excluding the city itself.
 	 *
 	 */
 	if (trades_len(l) > 0)
 		qsort(l, (unsigned) trades_len(l), sizeof(struct trade *), seller_comp);
-#endif NEW_TRADE
 
 	return l;
 }
@@ -181,14 +171,12 @@ buyer_list(int where, int except)
 	}
 	next_trade;
 
-#ifdef NEW_TRADE	
 	/*
 	 *  Sort everyone -- buyers high to low.
 	 *
 	 */
 	if (trades_len(l) > 0)
 		qsort(l, (unsigned) trades_len(l), sizeof(struct trade *), buyer_comp);
-#endif NEW_TRADE
 
 	return l;
 }
@@ -231,20 +219,12 @@ reduce_qty(struct trade *t, int cost)
 	OLY_UNREACHABLE();
 }
 
-#ifndef NEW_TRADE
-static void
-attempt_trade(struct trade *buyer, struct trade *seller)
-#else
 static int
 attempt_trade(struct trade *buyer, struct trade *seller, int cost)
-#endif NEW_TRADE     
 {
 	int item = buyer->item;
 	int qty;
 	int art;
-#ifndef NEW_TRADE
-	int cost;
-#endif
 	int item_cost;
 	int tariff = 0, where, garrison;
 	char *seller_s;
@@ -279,13 +259,11 @@ attempt_trade(struct trade *buyer, struct trade *seller, int cost)
 	 *      maximum the buyer will pay.
 	 */
 
-#ifdef NEW_TRADE
 	/*
 	 *  Temporarily this holds the cost per item.
 	 *
 	 */
 	if (!cost || cost < seller->cost) cost = seller->cost;
-#endif NEW_TRADE
 	
 	/*
 	 *  Buyer->cost too low.
@@ -306,21 +284,11 @@ attempt_trade(struct trade *buyer, struct trade *seller, int cost)
 		qty = min(buyer_qty, seller_qty);
 	}
 
-#ifdef NEW_TRADE
 	if (qty <= 0)
 		return 0;
-#else
-	if (qty <= 0)
-		return;
-#endif
 
-#ifdef NEW_TRADE
 	item_cost = cost;
 	cost = cost * qty;
-#else
-	cost = seller->cost * qty;
-	item_cost = seller->cost;
-#endif NEW_TRADE
 
 	/*
 	 *  Determine where
@@ -501,13 +469,10 @@ attempt_trade(struct trade *buyer, struct trade *seller, int cost)
 	  gold_tariffs += tariff;
 	};
 
-#ifdef NEW_TRADE
 	return 1;
-#endif 
 	
 }
 
-#ifdef NEW_TRADE
 /*
  *  Tue Jul 21 09:51:48 1998 -- Scott R. Turner
  *
@@ -653,18 +618,6 @@ resolve_trades_here(int where)
   };
 };
 
-/*
- *  Note move.c needs to be fixed for efficiency once this works.
- *
- */
-/*
-void
-match_trades(int who)
-{
-resolve_trades_here(subloc(who));
-};
-  */
-
 void
 match_all_trades(void)
 {
@@ -675,179 +628,9 @@ match_all_trades(void)
 	}
 	next_loc;
 }
-#endif NEW_TRADE
-
-#ifndef NEW_TRADE
-static void
-scan_trades(struct trade *t, trades_list l)
-{
-  int i;
-
-  for (i = 0; i < ilist_len(l) && t->qty > 0; i++)
-    {
-      if (l[i]->item != t->item)
-	continue;
-
-      if (l[i]->who == t->who)
-	continue;	/* don't trade with ourself */
-
-      if (t->kind == BUY)
-	attempt_trade(t, l[i]);
-      else if (t->kind == SELL)
-	attempt_trade(l[i], t);
-    }
-}
 
 
-void
-match_trades(int who)
-{
-	struct trade *t;
-	int where = subloc(who);
-	int first_buy = TRUE;
-	int first_sell = TRUE;
-	trades_list sellers;
-	trades_list buyers;
 
-	if (!market_here(who))
-		return;
-
-	loop_trade(who, t)
-	{
-		assert(t->who == who);
-
-		if (t->kind == BUY)
-		{
-			if (first_buy)
-			{
-				first_buy = FALSE;
-				sellers = seller_list(where, who);
-			}
-
-			scan_trades(t, sellers);
-		}
-		else if (t->kind == SELL)
-		{
-			if (first_sell)
-			{
-				first_sell = FALSE;
-				buyers = buyer_list(where, who);
-			}
-
-			scan_trades(t, buyers);
-		}
-	}
-	next_trade;
-}
-
-void
-match_all_trades(void)
-{
-	int where;
-	trades_list sellers;
-	trades_list buyers;
-	int i;
-
-	loop_loc(where)
-	{
-		if (!market_here(where))
-			continue;
-
-		sellers = seller_list(where, 0);
-		buyers = buyer_list(where, 0);
-
-		if (ilist_len(buyers) <= 0 || ilist_len(sellers) <= 0)
-			continue;
-
-		for (i = 0; i < ilist_len(buyers); i++)
-			scan_trades(buyers[i], sellers);
-	}
-	next_loc;
-}
-#endif NEW_TRADE
-
-
-#ifndef NEW_TRADE
-ilist trades_to_check = NULL;
-
-
-/*
- *  This may also become hideously inefficient with NEW, since it may
- *  check the same loc over and over.
- *
- */
-void
-check_validated_trades(void)
-{
-	int i;
-
-	for (i = 0; i < ilist_len(trades_to_check); i++)
-	{
-		match_trades(trades_to_check[i]);
-	}
-
-	ilist_clear(&trades_to_check);
-}
-
-/*
- *  Who has been given some item.  See if this validates
- *  any pending trades.
- *
- *  Our strategy is to see if any pending trades weren't already
- *  active at the old quantity of the item.  If so, we'll attempt
- *  a match soon.
- *
- *  We don't fire the trade inside of add_item, since it's too
- *  dangerous.  We want the command to complete, and be able to
- *  assert that a unit actually has an item after add_item has
- *  been called.
- */
-
-void
-investigate_possible_trade(int who, int item, int old_has)
-{
-	struct trade *t;
-	int check = FALSE;
-
-	if (item == item_gold)
-	{
-		loop_trade(who, t)
-		{
-			if (t->kind != BUY)
-				continue;
-
-			if ((old_has - t->have_left) / t->cost < t->qty)
-			{
-				check = TRUE;
-				break;
-			}
-		}
-		next_trade;
-	}
-	else
-	{
-		loop_trade(who, t)
-		{
-#if 0
-			if (t->kind != SELL)
-#else
-			if (t->kind != SELL || t->item != item)
-#endif
-				continue;
-
-			if (old_has - t->have_left < t->qty)
-			{
-				check = TRUE;
-				break;
-			}
-		}
-		next_trade;
-	}
-
-	if (check)
-		ilist_append(&trades_to_check, who);
-}
-#endif NEW_TRADE
 
 struct trade *
 find_trade(int who, int kind, int item)
@@ -967,10 +750,6 @@ v_buy(struct command *c)
 					box_name_qty(item, qty),
 					gold_each(cost, qty));
 
-#ifndef NEW_TRADE
-		if (market_here(c->who))
-			scan_trades(t, seller_list(where, c->who));
-#endif
 	}
 
 	return TRUE;
@@ -1041,10 +820,6 @@ v_sell(struct command *c)
 					box_name_qty(item, qty),
 					gold_each(cost, qty));
 
-#ifndef NEW_TRADE
-		if (market_here(c->who))
-			scan_trades(t, buyer_list(where, c->who));
-#endif NEW_TRADE
 	}
 
 	return TRUE;

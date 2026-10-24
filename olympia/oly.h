@@ -1936,9 +1936,6 @@ extern int immed_see_all;	/* override hidden-ness, for debugging */
 #define	see_all(n)		immed_see_all
 
 
-#ifndef NEW_TRADE
-extern ilist trades_to_check;
-#endif
 extern char *kind_s[];
 extern char *subkind_s[];
 extern char *dir_s[];

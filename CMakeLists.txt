@@ -237,7 +237,7 @@ target_include_directories(olympia-tag PRIVATE olympia/ lib/)
 # CMAKE_C_STANDARD above stays as the default for any future targets).
 target_compile_features(olympia-tag PRIVATE c_std_11)
 # Engine-specific defines (optimization/-g is owned by the build type / preset).
-target_compile_options(olympia-tag PRIVATE -DLINUX -DNEW_TRADE)
+target_compile_options(olympia-tag PRIVATE -DLINUX)
 olympia_compile_flags(olympia-tag)
 
 # Optional ASan/UBSan via the asan-ubsan preset (OLYMPIA_SANITIZE=ON).

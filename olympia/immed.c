@@ -59,10 +59,6 @@ immediate_commands(void)
 			olytime_increment(&sysclock);
 		}
 
-#ifndef NEW_TRADE
-		if (ilist_len(trades_to_check) > 0)
-			check_validated_trades();
-#endif 
 
 		/* show_day = FALSE; */
 	}

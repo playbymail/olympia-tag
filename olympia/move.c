@@ -1515,20 +1515,6 @@ move_stack(int who, int where)
 	update_weather_view_locs(who, where);
 	clear_contacts(who);
 
-#ifndef NEW_TRADE
-	if (subkind(where) == sub_city ||
-	    (subkind(where) == sub_guild &&
-	     rp_subloc(where)->guild == sk_trading)) 
-	{
-		int i;
-
-		loop_stack(who, i)
-		{
-			match_trades(i);
-		}
-		next_stack;
-	}
-#endif
 
 	if (subkind(where) == sub_ocean)
 	{

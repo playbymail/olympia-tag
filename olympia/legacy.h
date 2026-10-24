@@ -127,16 +127,13 @@ int v_capture_beasts(struct command *c);
 /* buy.c */
 void add_city_trade(int where, int kind, int item, int qty, int cost, int month);
 void add_scrolls(int where);
-void check_validated_trades(void);
 void clear_all_trades(int who);
 void delete_city_trade(int where, int item);
 struct trade *find_trade(int who, int kind, int item);
-void investigate_possible_trade(int who, int item, int old_has);
 void list_pending_trades(int who, int num);
 void market_report(int who, int where);
 int market_here(int who);
 void match_all_trades(void);
-void match_trades(int who);
 struct trade *new_trade(int who, int kind, int item);
 void opium_market_delta(int where);
 void trade_suffuse_ring(int where);

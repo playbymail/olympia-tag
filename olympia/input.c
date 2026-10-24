@@ -718,10 +718,6 @@ do_command(struct command *c)
 		c->status = (schar)finish_command(c);
 	}
 
-#ifndef NEW_TRADE
-	if (ilist_len(trades_to_check) > 0)
-		check_validated_trades();
-#endif 
 }
 
 
@@ -940,10 +936,6 @@ evening_phase(void)
 		c->days_executing++;
 		finish_command(c);
 
-#ifndef NEW_TRADE
-		if (ilist_len(trades_to_check) > 0)
-			check_validated_trades();
-#endif NEW_TRADE
 	}
 	ilist_reclaim(&l);
 
