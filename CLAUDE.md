@@ -26,13 +26,17 @@ touching prototypes — the full phase-by-phase record is in
 > justified, and re-baselined in the same commit. Gameplay tweaks and scope
 > expansion are out of bounds.
 
-> **One engine binary, no map generator.** Unlike G3 (three targets:
-> `olympia-g3`, `mapgen-g3`, `island-g3`), TAG builds a **single** target,
-> `olympia-tag`. There is no `mapgen/` directory and no map/island generator —
-> regenerating a map currently means borrowing `olympia-g3`'s generator (the
-> `run/olympia-tag.sh` `G3_MAPGEN_SEED_*` vars are a vestige of that). Vendoring
-> mapgen into this repo is tracked as **#3** (a separate repo was considered and
-> rejected).
+> **Three targets: the engine plus a vendored map generator.** TAG builds
+> `olympia-tag`, `mapgen-tag`, and `island-tag`. The generator (`mapgen/`,
+> `island/`, and G3's MD5 RNG in `lib/rnd.c` + `lib/rng.c`) was vendored from
+> `olympia-g3` @ `7b510b4` (#3; a separate repo was considered and rejected).
+> It is byte-identical to G3's except two TAG adaptations: `(unsigned char)`
+> `tolower()` casts for TAG's stricter `-Wchar-subscripts` lock, and
+> `sub_battlefield` written as `field` (TAG's engine spelling — G3's
+> `battlefield` loads as subkind 0 and aborts `loc_depth()`). The engine does
+> **not** link `lib/rnd.c`/`lib/rng.c`; its RNG is the inlined
+> drand48/erand48 in `olympia/z.c`, seeded from `lib/system` `seed0..2`.
+> The golden gate still runs on the fixture DB, not on a generated map.
 
 ## Build
 
@@ -41,7 +45,7 @@ Requires CMake (>= 4.1), Ninja, and Clang or GCC.
 ```bash
 cmake --preset debug
 cmake --build --preset debug
-# Binary: build/debug/olympia-tag
+# Binaries: build/debug/{olympia-tag,mapgen-tag,island-tag}
 ```
 
 Presets (`CMakePresets.json`): `debug` (default), `release`, `asan-ubsan`.
@@ -88,13 +92,36 @@ stands under the `asan-ubsan` preset (`OLYMPIA_PRESET=asan-ubsan
 (the never-run-turn fixes #4/#5/#6, the date flag, and the openrsync blind spot
 it sidesteps).
 
+### Map generator checks
+
+```bash
+./run/mapgen/mapgen.sh                                # Map/Regions/Land/Cities/randseed -> gate/loc/road
+./tests/mapgen/regress/secret-sea-route/check.sh      # YES: pinned gate/loc/road sha256 for a fixed seed
+./tests/island/regress/ocean-glyphs/check.sh          # YES: island-tag ocean-glyph invariants
+```
+
+Inputs live in `tests/mapgen/fixtures/`; `run/mapgen/` output is gitignored.
+Both checks honor `OLYMPIA_PRESET` (run them under `asan-ubsan` too).
+`secret-sea-route/EXPECT.sha256` differs from G3's only in `loc` (the `field`
+rename). Generated output is **not** part of the engine golden gate: the
+fixture DB has no map, and a generated world also needs `lib/log/` to exist
+before the first turn (world seeding in `load_db()` logs before
+`open_logfile()` creates it).
+
 ## Layout
 
 - `olympia/` — TAG engine sources (63 `.c`) and headers
-- `lib/` — shared support code (entity lists, tiles, roads, allocation, …)
+- `mapgen/` — map generator (`mapgen.c`, `z.c`; vendored from G3, #3)
+- `island/` — island generator (`island.c`; vendored from G3, #3)
+- `lib/` — shared support code (entity lists, tiles, roads, allocation, …);
+  `rnd.c`/`rng.c` are the generators' MD5 RNG and are not linked into the engine;
+  `pcg.c` is PCG32 (from G3 `genesis/`), the planned RNG for regenerating the
+  goldens — linked only by its known-answer test (`tests/rng/check.sh`)
 - `tests/` — `olympia/fixtures/lib.tgz` (fixture DB) + the golden gate
-  (`olympia/golden_check.sh`, `olympia/golden/manifest.sha256`)
-- `run/` — `olympia-tag.sh` driver + scratch run dir (`run/olympia/lib`)
+  (`olympia/golden_check.sh`, `olympia/golden/manifest.sha256`); `mapgen/`
+  fixtures + regress check; `island/` regress check
+- `run/` — `olympia-tag.sh` driver + scratch run dir (`run/olympia/lib`);
+  `mapgen/mapgen.sh` driver + scratch dir
 - `doc/` — assorted notes (`r.texi`) + the 64-bit modernization plan
   (`modernization-64bit-plan.md`). The shared prototype **playbook** is *not*
   vendored here — see [Worked examples](#worked-examples--method).
@@ -135,8 +162,8 @@ it sidesteps).
 
 The C11/64-bit modernization ran as a phased warning ladder and is **complete**
 (epic #15). Every targeted warning class is enforced as `-Werror` via
-`olympia_compile_flags()` in `CMakeLists.txt` (applied to the single `olympia-tag`
-target), and the golden flow runs clean under AddressSanitizer +
+`olympia_compile_flags()` in `CMakeLists.txt` (applied to `olympia-tag`, and
+since #3 also to `mapgen-tag`/`island-tag`), and the golden flow runs clean under AddressSanitizer +
 UndefinedBehaviorSanitizer. The per-phase scaffolding has been removed; the
 remaining work is the actual 32→64-bit refactoring the ladder cleared the way for.
 
@@ -204,7 +231,8 @@ TAG's own per-phase write-up — including how it diverged from the siblings —
 [doc/modernization-64bit-plan.md](doc/modernization-64bit-plan.md).
 
 **Re-probe; don't assume sibling parity.** TAG differs from G3 in ways that
-matter: one target (no mapgen/island), sanitizers gated on the `asan-ubsan`
+matter: the engine's own drand48 RNG (the vendored mapgen/island use G3's MD5
+`lib/rnd.c`), sanitizers gated on the `asan-ubsan`
 preset, the `plist` already retired, prototypes via per-module headers (no
 `proto.h`), and `effects.c`/`entity_builds.c` **live** here though dead in G3.
 Every engine in this lineage has quietly diverged from its sibling — verify TAG's

@@ -191,7 +191,77 @@ if (WIN32)
 endif ()
 
 # ------------------------------------------------------------------------------
-# TAG olympia (main game engine; no mapgen in this engine)
+# TAG island + mapgen (vendored from olympia-g3 @ 7b510b4, issue #3)
+# ------------------------------------------------------------------------------
+# Both link G3's MD5 RNG in lib/rnd.c + lib/rng.c (seeded from a `randseed`
+# file). olympia-tag does NOT: the engine keeps its own inlined drand48/erand48
+# in olympia/z.c (seeded from lib/system seed0..2), so these two files are
+# generator-only and cannot perturb the engine's golden output.
+add_executable(island-tag)
+target_sources(island-tag PRIVATE
+    island/island.c lib/rnd.c lib/rng.c
+)
+target_include_directories(island-tag PRIVATE island/ lib/)
+# Declare the C11 requirement at the target level (the project-level
+# CMAKE_C_STANDARD above stays as the default for any future targets).
+target_compile_features(island-tag PRIVATE c_std_11)
+olympia_compile_flags(island-tag)
+
+# Optional ASan/UBSan via the asan-ubsan preset (OLYMPIA_SANITIZE=ON).
+olympia_enable_sanitizers(island-tag)
+
+add_executable(mapgen-tag)
+target_sources(mapgen-tag PRIVATE
+    mapgen/mapgen.c mapgen/z.c
+    lib/ilist.c lib/roads.c lib/tiles.c
+    lib/checked_alloc.c lib/rnd.c lib/rng.c
+)
+target_sources(mapgen-tag PRIVATE
+    FILE_SET HEADERS
+    BASE_DIRS
+        mapgen lib
+    FILES
+        mapgen/z.h
+        lib/checked_alloc.h
+        lib/rnd.h
+        lib/rng.h
+        lib/lists.h
+)
+target_include_directories(mapgen-tag PRIVATE mapgen/ lib/)
+# Declare the C11 requirement at the target level (the project-level
+# CMAKE_C_STANDARD above stays as the default for any future targets).
+target_compile_features(mapgen-tag PRIVATE c_std_11)
+olympia_compile_flags(mapgen-tag)
+
+# Optional ASan/UBSan via the asan-ubsan preset (OLYMPIA_SANITIZE=ON).
+olympia_enable_sanitizers(mapgen-tag)
+
+# ------------------------------------------------------------------------------
+# PCG32 known-answer test (lib/pcg.c, copied from olympia-g3 genesis/pcg.c)
+# ------------------------------------------------------------------------------
+# lib/pcg.c is the planned replacement RNG for regenerating the goldens; nothing
+# else links it yet, so this target is what keeps it compiled under the locked
+# flag set. Run via tests/rng/check.sh.
+add_executable(pcg-check-tag)
+target_sources(pcg-check-tag PRIVATE
+    tests/rng/pcg_check.c lib/pcg.c
+)
+target_sources(pcg-check-tag PRIVATE
+    FILE_SET HEADERS
+    BASE_DIRS
+        lib
+    FILES
+        lib/pcg.h
+)
+target_include_directories(pcg-check-tag PRIVATE lib/)
+target_compile_features(pcg-check-tag PRIVATE c_std_11)
+olympia_compile_flags(pcg-check-tag)
+
+# Optional ASan/UBSan via the asan-ubsan preset (OLYMPIA_SANITIZE=ON).
+olympia_enable_sanitizers(pcg-check-tag)
+
+# ------------------------------------------------------------------------------
+# TAG olympia (main game engine)
 # ------------------------------------------------------------------------------
 add_executable(olympia-tag)
 target_sources(olympia-tag

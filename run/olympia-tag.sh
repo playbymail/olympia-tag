@@ -108,10 +108,10 @@ echo " info: rebuilt lib/ from fixtures tarball"
 }
 
 ############################################################################
-# set seed values for random number generator
-export G3_MAPGEN_SEED_1=18481
-export G3_MAPGEN_SEED_2=28078
-export G3_MAPGEN_SEED_3=26982
+# No seed env vars: the engine seeds from the seed0/seed1/seed2 lines in
+# lib/system, and the vendored map generator (run/mapgen/mapgen.sh) from its own
+# randseed file. The old G3_MAPGEN_SEED_* exports were read by nothing and were
+# removed (#3).
 
 ###########################################################################
 # run the program in "immediate" mode

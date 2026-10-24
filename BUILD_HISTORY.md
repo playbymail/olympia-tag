@@ -62,7 +62,9 @@ history.
 >   two, G3's three). So there is **no multi-target parity phase** (G3's
 >   "Phase A"); the ladder starts at Phase 6 on the one target. Regenerating a
 >   map currently means borrowing G3's generator; vendoring it is tracked
->   separately (#3) and is not part of this ladder.
+>   separately (#3) and is not part of this ladder. *(Since superseded: #3
+>   vendored `mapgen-tag`/`island-tag` from G3 @ `7b510b4` after the ladder
+>   closed, built under the same locked flag set — see CLAUDE.md.)*
 > - **MD5 RNG, inlined in `z.c`** (no `rnd.c`, no `drand48`/`erand48`, no
 >   `seed[3]`). → **Skip** G1's `seed[3]` signedness fix (there is none, so **no
 >   deliberate golden change** in Phase 7), and `sizeof-pointer-memaccess` was
