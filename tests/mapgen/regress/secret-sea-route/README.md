@@ -1,6 +1,7 @@
 # Regression: secret-sea-route NULL deref (`adjacent_tile_water` off-by-one)
 
-**Seed:** `S000000000000002` (the 16-byte `randseed` in this directory).
+**Seed:** `S000000000000005` (the 16-byte `randseed` in this directory, read as
+a seed phrase by `load_seed()` in `lib/prng.c`).
 
 ## What it reproduces
 
@@ -25,8 +26,12 @@ build, so the crash lands in `add_road`/`roads_append` rather than the
 
 It is seed-sensitive because it requires a mountain port city whose sole ocean
 neighbour shuffles into slot 8 **and** `rnd(1,7) == 7`. The canonical fixture
-seed does not trigger it; `S000000000000002` does (found by a brute-force seed
-sweep — it was the third seed tried).
+seed does not trigger it; `S000000000000005` does. It was found by a brute-force
+sweep of `S%015d` seeds against a scratch build with the off-by-one
+reintroduced: under PCG32 (#31) seeds `…005`, `…011` and `…024` crash it, and
+the fixed build runs all three (and `…000`–`…024`) clean under ASan/UBSan. The
+original seed, `S000000000000002`, was found the same way against the old MD5
+`lib/rnd.c` stream (the third seed tried) and no longer reaches the path.
 
 ## The fix
 

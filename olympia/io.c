@@ -5,8 +5,10 @@
 #include	<sys/types.h>
 #include	<sys/stat.h>
 #include	<dirent.h>
+#include	<inttypes.h>
 #include	"z.h"
 #include	"oly.h"
+#include	"../lib/prng.h"
 
 
 int monster_subloc_init = FALSE;
@@ -3706,7 +3708,11 @@ load_system(void)
 	FILE *fp;
 	char *s;
 	char *fname;
-	extern short seed[3];
+	unsigned short seed[3] = {0, 0, 0};	/* legacy drand48 seed0..2 */
+	int have_seed = FALSE;
+	uint64_t pcg_state = 0;
+	uint64_t pcg_inc = 0;
+	int have_pcg = FALSE;
 	char tmp[80];
 
 	fname = sout("%s/system", libdir);
@@ -3755,15 +3761,28 @@ load_system(void)
 		}
 		else if (strncmp(s, "seed0=", 6) == 0)
 		{
-			seed[0] = (short)(atoi(&s[6]));
+			seed[0] = (unsigned short)(atoi(&s[6]));
+			have_seed = TRUE;
 		}
 		else if (strncmp(s, "seed1=", 6) == 0)
 		{
-			seed[1] = (short)(atoi(&s[6]));
+			seed[1] = (unsigned short)(atoi(&s[6]));
+			have_seed = TRUE;
 		}
 		else if (strncmp(s, "seed2=", 6) == 0)
 		{
-			seed[2] = (short)(atoi(&s[6]));
+			seed[2] = (unsigned short)(atoi(&s[6]));
+			have_seed = TRUE;
+		}
+		else if (strncmp(s, "pcg_state=", 10) == 0)
+		{
+			pcg_state = strtoull(&s[10], NULL, 16);
+			have_pcg = TRUE;
+		}
+		else if (strncmp(s, "pcg_inc=", 8) == 0)
+		{
+			pcg_inc = strtoull(&s[8], NULL, 16);
+			have_pcg = TRUE;
 		}
 		else if (strncmp(s, "post=", 5) == 0)
 		{
@@ -3967,7 +3986,19 @@ load_system(void)
 	  options.middle_piety = 6;
 	  options.bottom_piety = 3;
 	};
-	  
+
+	/*
+	 *  Restore the rnd() stream.  pcg_state/pcg_inc are the exact saved
+	 *  state.  A DB from before PCG32 (issue #31) has only the drand48
+	 *  seed0..2; fold those 48 bits into a PCG seed, once -- the next save
+	 *  writes pcg_*.  With neither, init_random()'s clock seed stands.
+	 */
+	if (have_pcg)
+		rnd_set_state(pcg_state, pcg_inc);
+	else if (have_seed)
+		rnd_seed((uint64_t)seed[0] |
+			 (uint64_t)seed[1] << 16 |
+			 (uint64_t)seed[2] << 32);
 
 	fclose(fp);
 }
@@ -3978,7 +4009,7 @@ save_system(void)
 {
 	FILE *fp;
 	char *fname;
-	extern short seed[3];
+	uint64_t pcg_state, pcg_inc;
 
 	fname = sout("%s/system", libdir);
 
@@ -3998,9 +4029,9 @@ save_system(void)
 	fprintf(fp, "skill_player=%d\n", skill_player);
 	fprintf(fp, "from_host=%s\n", from_host);
 	fprintf(fp, "reply_host=%s\n", reply_host);
-	fprintf(fp, "seed0=%d\n", seed[0]);
-	fprintf(fp, "seed1=%d\n", seed[1]);
-	fprintf(fp, "seed2=%d\n", seed[2]);
+	rnd_get_state(&pcg_state, &pcg_inc);
+	fprintf(fp, "pcg_state=%016" PRIx64 "\n", pcg_state);
+	fprintf(fp, "pcg_inc=%016" PRIx64 "\n", pcg_inc);
 	fprintf(fp, "post=%d\n", post_has_been_run);
 	fprintf(fp, "init=%d\n", seed_has_been_run);
 	fprintf(fp, "ds=%d\n", dist_sea_compute);

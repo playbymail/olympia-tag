@@ -108,8 +108,9 @@ echo " info: rebuilt lib/ from fixtures tarball"
 }
 
 ############################################################################
-# No seed env vars: the engine seeds from the seed0/seed1/seed2 lines in
-# lib/system, and the vendored map generator (run/mapgen/mapgen.sh) from its own
+# No seed env vars: the engine seeds its PCG32 rnd() (lib/prng.c, #31) from
+# lib/system -- pcg_state/pcg_inc, or the fixture's legacy seed0..2 on first
+# load -- and the vendored map generator (run/mapgen/mapgen.sh) from its own
 # randseed file. The old G3_MAPGEN_SEED_* exports were read by nothing and were
 # removed (#3).
 

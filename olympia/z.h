@@ -5,8 +5,6 @@
 /* BUGFIX (modernization): forward declarations are required for varadic functions */
 #include "legacy.h"
 
-#define	SYSV
-
 #define	TRUE	1
 #define	FALSE	0
 

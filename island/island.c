@@ -25,9 +25,9 @@
 #include <stdlib.h>
 
 /*
- *  Shared MD5 RNG (lib/rnd.c) — rnd()/load_seed()/save_seed() used here.
+ *  Shared PCG32 rnd() stream (lib/prng.c) — rnd()/load_seed()/save_seed() used here.
  */
-#include "../lib/rnd.h"
+#include "../lib/prng.h"
 
 #define MAX_MAP			120
 #define LINE_MAX		200

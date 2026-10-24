@@ -28,15 +28,34 @@ touching prototypes — the full phase-by-phase record is in
 
 > **Three targets: the engine plus a vendored map generator.** TAG builds
 > `olympia-tag`, `mapgen-tag`, and `island-tag`. The generator (`mapgen/`,
-> `island/`, and G3's MD5 RNG in `lib/rnd.c` + `lib/rng.c`) was vendored from
-> `olympia-g3` @ `7b510b4` (#3; a separate repo was considered and rejected).
+> `island/`, and at the time G3's MD5 RNG in `lib/rnd.c` + `lib/rng.c`) was
+> vendored from `olympia-g3` @ `7b510b4` (#3; a separate repo was considered
+> and rejected).
 > It is byte-identical to G3's except two TAG adaptations: `(unsigned char)`
 > `tolower()` casts for TAG's stricter `-Wchar-subscripts` lock, and
 > `sub_battlefield` written as `field` (TAG's engine spelling — G3's
-> `battlefield` loads as subkind 0 and aborts `loc_depth()`). The engine does
-> **not** link `lib/rnd.c`/`lib/rng.c`; its RNG is the inlined
-> drand48/erand48 in `olympia/z.c`, seeded from `lib/system` `seed0..2`.
-> The golden gate still runs on the fixture DB, not on a generated map.
+> `battlefield` loads as subkind 0 and aborts `loc_depth()`). The golden gate
+> still runs on the fixture DB, not on a generated map.
+
+> **One RNG: PCG32, shared by all three programs (#31).** `rnd()` lives in
+> `lib/prng.c` on one process-global PCG32 stream (`lib/pcg.c`, copied from G3
+> `genesis/` with the code unchanged). It replaced the engine's inlined
+> **drand48/erand48** (`olympia/z.c`; *not* MD5, despite what older notes said)
+> and the generators' MD5 `lib/rnd.c` + `lib/rng.c`, which are deleted.
+> - **Engine seed:** `pcg_state=`/`pcg_inc=` (16 hex digits each) in
+>   `lib/system`, the exact stream state, so save → reload continues the
+>   stream. A DB with only the legacy drand48 `seed0..2` (like the fixture) is
+>   converted once: the 48 bits are folded through `pcg32_seed_step(s, 0, 0)`.
+>   `init_random()` seeds from time/pid *before* `load_db()`, so a DB with
+>   neither gets a clock seed.
+> - **Generator seed:** `randseed` uses the same `pcg_state=`/`pcg_inc=` text.
+>   A file without those keys, like the 16-byte phrases in `tests/mapgen/`, is
+>   hashed as a seed phrase. `save_seed()` always writes the exact state, so
+>   mapgen → island chains.
+> - **`rnd(low, high)` with `high < low`** (e.g. `rnd(0, ilist_len(l)-1)` on an
+>   empty list, `test_random()`'s `rnd(-3, -10)`) keeps the legacy drand48
+>   result, `(int)(u*(high-low+1)+low)` from one draw, rather than asserting.
+>   `pcg32_range()` requires `hi >= lo`.
 
 ## Build
 
@@ -102,8 +121,8 @@ it sidesteps).
 
 Inputs live in `tests/mapgen/fixtures/`; `run/mapgen/` output is gitignored.
 Both checks honor `OLYMPIA_PRESET` (run them under `asan-ubsan` too).
-`secret-sea-route/EXPECT.sha256` differs from G3's only in `loc` (the `field`
-rename). Generated output is **not** part of the engine golden gate: the
+`secret-sea-route/EXPECT.sha256` pins TAG's own PCG32 output for reproducer seed
+`S000000000000005` (since #31 it is no longer comparable to G3's MD5 output). Generated output is **not** part of the engine golden gate: the
 fixture DB has no map. (A generated world runs its first turn as-is since #30,
 which sets up `lib/log/` before `load_db()`'s world seeding writes GM messages.)
 
@@ -113,9 +132,8 @@ which sets up `lib/log/` before `load_db()`'s world seeding writes GM messages.)
 - `mapgen/` — map generator (`mapgen.c`, `z.c`; vendored from G3, #3)
 - `island/` — island generator (`island.c`; vendored from G3, #3)
 - `lib/` — shared support code (entity lists, tiles, roads, allocation, …);
-  `rnd.c`/`rng.c` are the generators' MD5 RNG and are not linked into the engine;
-  `pcg.c` is PCG32 (from G3 `genesis/`), the planned RNG for regenerating the
-  goldens — linked only by its known-answer test (`tests/rng/check.sh`)
+  `prng.c` is the shared `rnd()` stream plus `randseed` I/O, on `pcg.c` (PCG32
+  from G3 `genesis/`, held to its known answers by `tests/rng/check.sh`)
 - `tests/` — `olympia/fixtures/lib.tgz` (fixture DB) + the golden gate
   (`olympia/golden_check.sh`, `olympia/golden/manifest.sha256`); `mapgen/`
   fixtures + regress check; `island/` regress check
@@ -189,7 +207,8 @@ newsletter date keeps the goldens reproducible.
 **Before changing build flags, prototypes, or headers, read
 [BUILD_HISTORY.md](BUILD_HISTORY.md)** — it has the full phase-by-phase record,
 the traps each class hid (and the TAG-specific divergences: the single target, the
-MD5 RNG inlined in `z.c`, the feature-code format/return sites), the rationale
+drand48 RNG inlined in `z.c` (since #31, PCG32), the feature-code format/return
+sites), the rationale
 behind every locked-in flag, and the
 [warning policy](BUILD_HISTORY.md#warning-policy) for triaging new warnings.
 
@@ -230,8 +249,8 @@ TAG's own per-phase write-up — including how it diverged from the siblings —
 [doc/modernization-64bit-plan.md](doc/modernization-64bit-plan.md).
 
 **Re-probe; don't assume sibling parity.** TAG differs from G3 in ways that
-matter: the engine's own drand48 RNG (the vendored mapgen/island use G3's MD5
-`lib/rnd.c`), sanitizers gated on the `asan-ubsan`
+matter: one PCG32 `rnd()` shared by engine and generators (`lib/prng.c`; G3
+still has MD5), sanitizers gated on the `asan-ubsan`
 preset, the `plist` already retired, prototypes via per-module headers (no
 `proto.h`), and `effects.c`/`entity_builds.c` **live** here though dead in G3.
 Every engine in this lineage has quietly diverged from its sibling — verify TAG's

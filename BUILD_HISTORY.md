@@ -65,11 +65,17 @@ history.
 >   separately (#3) and is not part of this ladder. *(Since superseded: #3
 >   vendored `mapgen-tag`/`island-tag` from G3 @ `7b510b4` after the ladder
 >   closed, built under the same locked flag set — see CLAUDE.md.)*
-> - **MD5 RNG, inlined in `z.c`** (no `rnd.c`, no `drand48`/`erand48`, no
->   `seed[3]`). → **Skip** G1's `seed[3]` signedness fix (there is none, so **no
->   deliberate golden change** in Phase 7), and `sizeof-pointer-memaccess` was
->   already **0** (no MD5 `bzero(ctx, sizeof(ctx))` defect) — Phase 6 just locks
->   it at zero.
+> - **RNG inlined in `z.c`, no `rnd.c`.** → `sizeof-pointer-memaccess` was
+>   already **0** (no MD5 `bzero(ctx, sizeof(ctx))` defect), so Phase 6 just
+>   locks it at zero. G1's `seed[3]` signedness fix was skipped, so Phase 7 had
+>   **no deliberate golden change**.
+>   *Correction (#31):* this was recorded as an "MD5 RNG, no
+>   `drand48`/`erand48`, no `seed[3]`". It was in fact an inlined
+>   **drand48/erand48** (live via `z.h`'s `#define SYSV`), and it **had** a
+>   `seed[3]`: `z.c` `unsigned short seed[3]` against `io.c`'s
+>   `extern short seed[3]`. The mismatch was benign, with the same width and only
+>   a sign reinterpretation (the fixture's `seed0=-14500`), and both are now gone.
+>   See [RNG: PCG32](#rng-pcg32-31).
 > - **Starts further along than G3.** The golden gate already existed and the
 >   three never-run-turn bugs (#4 cloudlands hang, #5 `gm_report`
 >   div-by-zero/null-deref, #6 Times-index vararg) were already fixed before this
@@ -155,7 +161,7 @@ catches `sizeof(ptr)` where `sizeof(*ptr)` was meant (8 vs 4 bytes on LP64).
   artifacts.c:1, c2.c:1, check.c:1, eat.c:1, report.c:1`. All
   representation-preserving: `read()` results to `ssize_t`, documented `(int)`
   casts on provably-`<2^31` `strlen` lengths, allocator-size casts. The `z.c`
-  MD5/RNG site was eyeballed while here.
+  RNG site (drand48, not MD5 as first recorded) was eyeballed while here.
 - **`sizeof-pointer-memaccess` — 0 sites.** TAG has **no `rnd.c`** (RNG inlined in
   `z.c`) and no `bzero(ctx, sizeof(ctx))` defect; this phase just dropped the
   `-Wno-sizeof-pointer-memaccess` suppression and locked the class at zero.
@@ -177,8 +183,9 @@ independent in spelling, but a real hazard where a negative `int` flows into a
   and `my_malloc` size args fed by `int`-returning `*_len()` accessors —
   `(size_t)`/`(unsigned)` casts (values provably ≥ 0), including once in a shared
   `loop.h` macro that cleared several sites at once.
-- **No `seed[3]` fix** — TAG is MD5 lineage, not `drand48` → **no deliberate
-  golden change** here (unlike G1). Re-checked under `asan-ubsan` after the debug
+- **No `seed[3]` fix**, and so **no deliberate golden change** here (unlike
+  G1). The recorded reason ("TAG is MD5 lineage, not `drand48`") was wrong: see
+  the #31 correction above. Re-checked under `asan-ubsan` after the debug
   pass (G2 found a few `bcopy`/`bzero` length args only the sanitizer surfaces).
 
 Portable (no Clang guard). Source fixes (`8944fe9`) and flag flip (`3768493`)
@@ -295,6 +302,44 @@ to a committed golden tree with `rsync -a -n -c --delete`, but macOS
 back to a size+mtime quick-check — so an equal-size content change (e.g. the
 fixed-width Times masthead date) passed undetected. This gate never used rsync; it
 hashes every byte with sha256.
+
+## RNG: PCG32 (#31)
+
+After the ladder, the three programs' two generators were replaced by one PCG32
+stream. This is a **deliberate output change**: the engine golden and
+`secret-sea-route/EXPECT.sha256` are re-baselined separately.
+
+- **Before.** The engine used an inlined drand48/erand48 in `olympia/z.c`,
+  `rnd() = (int)(erand48(seed) * (high-low+1) + low)`, seeded from `lib/system`
+  `seed0..2`. The generators used G3's MD5 `lib/rnd.c` (+ the unwired
+  `lib/rng.c` stream prototype), seeded from a 16-byte `randseed`.
+- **After.** `lib/prng.c` holds one global `pcg32_t` (from `lib/pcg.c`,
+  unchanged from G3 `genesis/`). All three programs link it: `rnd()`,
+  `rnd_seed()`, `rnd_get_state()`/`rnd_set_state()`, `load_seed()`/`save_seed()`.
+  `lib/rnd.{c,h}` and `lib/rng.{c,h}` are deleted, and with them `MD5()`,
+  `md5_int()` and `rng_*` (none had an outside caller). So are the drand48
+  block and the `SYSV` split.
+- **One stream, not per-subsystem.** Per-subsystem streams
+  (`pcg32_seed_step()`, G3's `rng-state-granularity.md` direction) would need a
+  stream choice at each of ~480 call sites. Deferred.
+- **Seeds.** `lib/system` stores `pcg_state=`/`pcg_inc=` (exact state, so it
+  round-trips). A legacy `seed0..2`-only DB (the fixture) is folded once via
+  `rnd_seed((u16)s0 | (u16)s1<<16 | (u16)s2<<32)`. `randseed` is the same
+  key=value text, and a file without the keys is hashed as a seed phrase (the
+  committed `tests/mapgen/` seeds still load). `init_random()` runs before
+  `load_db()` (`call_init_routines()`), so its clock seed is overwritten
+  whenever the DB has a seed.
+- **Degenerate ranges.** `pcg32_range()` requires `hi >= lo`. Many callers can
+  pass `high < low`: `rnd(0, ilist_len(l)-1)` on an empty list, `rnd(1, sum)`
+  with `sum == 0`, and `test_random()`'s deliberate `rnd(-3, -10..-16)`.
+  Instead of asserting, `rnd()` reproduces drand48's result for those,
+  `(int)(u*(high-low+1)+low)` from one 32-bit draw. The MD5 generator `rnd()`
+  looped forever on `high < low` (a negative `r >>= 1` never reaches 0), so the
+  generators provably never passed one.
+- **secret-sea-route reseeded.** Its old seed `S000000000000002` was found by
+  brute force against the MD5 stream. A new sweep with the off-by-one
+  reintroduced in a scratch build found `S000000000000005` (also `…011`,
+  `…024`). See its README.
 
 ## Known bugs deferred past the 64-bit effort
 

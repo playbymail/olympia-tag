@@ -84,15 +84,17 @@ not in the default `-W` set, so it never fired until probed.
   representation-preserving (`read()`→`ssize_t`, documented `(int)` casts on
   provably-`<2^31` `strlen` lengths, allocator-size casts). `sizeof-pointer-memaccess`
   is already **0** — TAG has **no `rnd.c`**; the RNG lives inline in `z.c`, and no
-  `bzero(ctx, sizeof(ctx))` site exists. Verify the `z.c` MD5/RNG site by eye
+  `bzero(ctx, sizeof(ctx))` site exists. Verify the `z.c` RNG site (actually
+  drand48, not MD5 — corrected in #31) by eye
   while here, then lock the pair at zero by dropping `-Wno-sizeof-pointer-memaccess`.
 - **Phase 7 — `sign-conversion` (36):** `gm.c:7, perm.c:6, report.c:5, combat.c:2,
   input.c:2, main.c:2, use.c:2, check.c:1, day.c:1, garr.c:1, io.c:1, npc.c:1,
   seed.c:1, shipcraft.c:1, sout.c:1, summary.c:1, swear.c:1`. Dominated by
   `qsort` `nmemb` and `my_malloc` size args fed by `int`-returning `*_len()`
   accessors — `(size_t)`/`(unsigned)` casts, including once in a shared `loop.h`
-  macro that clears several sites at once. **No `seed[3]` fix** (TAG is MD5
-  lineage, not `drand48`) → no deliberate golden change here. Re-check under
+  macro that clears several sites at once. **No `seed[3]` fix** (recorded as "TAG
+  is MD5 lineage, not `drand48`"; wrong, see the correction under item 3 below) →
+  no deliberate golden change here. Re-check under
   `asan-ubsan` (G2 found a few `bcopy`/`bzero` length args only the sanitizer
   surfaces).
 - **Phase 8 — `return-type` (9) + `return-mismatch` (2):** `return-type` in
@@ -171,8 +173,10 @@ instead of the contradictory multi-block mess. Pure structural refactor: golden
 2. **Starts further along than G3.** The golden gate already exists (Step 0 done),
    and the three never-run-turn bugs (#4 cloudlands hang, #5 `gm_report`
    div-by-zero/null-deref, #6 Times-index vararg) are already fixed. No Step 0.
-3. **MD5 lineage, RNG inlined in `z.c`** (no `rnd.c`, no `drand48`/`erand48`, no
-   `seed[3]`). → **Skip** G1's `seed[3]` signedness fix. `sizeof-pointer-memaccess`
+3. **RNG inlined in `z.c`** (no `rnd.c`). → **Skip** G1's `seed[3]` signedness
+   fix. *(Correction, #31: recorded here as MD5 with no `drand48`/`seed[3]`. It
+   was an inlined drand48/erand48 with a benign `short`/`unsigned short`
+   `seed[3]` mismatch. Since #31, PCG32.)* `sizeof-pointer-memaccess`
    is already **0** (no MD5 `bzero(ctx,sizeof(ctx))` defect) — Phase 6 just locks
    it at zero.
 4. **Sanitizers in the *default* build** via the `phase_5` hardcode; the

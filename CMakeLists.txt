@@ -64,8 +64,9 @@ function(olympia_compile_flags tgt)
         -Wimplicit-function-declaration -Werror=implicit-function-declaration  # Phase 4
         -Wmissing-declarations -Werror=missing-declarations              # Phase 5
         # A sizeof(ptr) where sizeof(*ptr) is meant grows 4->8 bytes on LP64
-        # (a real corruption risk). TAG's RNG is inlined in z.c (no rnd.c) with
-        # no MD5 bzero(ctx, sizeof(ctx)) defect, so this class is already 0;
+        # (a real corruption risk). TAG never had G3's MD5 rnd.c and its
+        # bzero(ctx, sizeof(ctx)) defect (the engine RNG was an inlined
+        # drand48, now PCG32 in lib/prng.c), so this class was already 0;
         # locked at zero. Portable (GCC understands it too).
         -Wsizeof-pointer-memaccess -Werror=sizeof-pointer-memaccess      # Phase 6 (#17)
         # Implicit signed<->unsigned conversions: a negative int flowing into a
@@ -193,13 +194,12 @@ endif ()
 # ------------------------------------------------------------------------------
 # TAG island + mapgen (vendored from olympia-g3 @ 7b510b4, issue #3)
 # ------------------------------------------------------------------------------
-# Both link G3's MD5 RNG in lib/rnd.c + lib/rng.c (seeded from a `randseed`
-# file). olympia-tag does NOT: the engine keeps its own inlined drand48/erand48
-# in olympia/z.c (seeded from lib/system seed0..2), so these two files are
-# generator-only and cannot perturb the engine's golden output.
+# Both draw from the shared PCG32 rnd() stream in lib/prng.c + lib/pcg.c
+# (issue #31), seeded from a `randseed` file (load_seed/save_seed). The engine
+# links the same two files, seeded from lib/system instead.
 add_executable(island-tag)
 target_sources(island-tag PRIVATE
-    island/island.c lib/rnd.c lib/rng.c
+    island/island.c lib/prng.c lib/pcg.c
 )
 target_include_directories(island-tag PRIVATE island/ lib/)
 # Declare the C11 requirement at the target level (the project-level
@@ -214,7 +214,7 @@ add_executable(mapgen-tag)
 target_sources(mapgen-tag PRIVATE
     mapgen/mapgen.c mapgen/z.c
     lib/ilist.c lib/roads.c lib/tiles.c
-    lib/checked_alloc.c lib/rnd.c lib/rng.c
+    lib/checked_alloc.c lib/prng.c lib/pcg.c
 )
 target_sources(mapgen-tag PRIVATE
     FILE_SET HEADERS
@@ -223,8 +223,8 @@ target_sources(mapgen-tag PRIVATE
     FILES
         mapgen/z.h
         lib/checked_alloc.h
-        lib/rnd.h
-        lib/rng.h
+        lib/prng.h
+        lib/pcg.h
         lib/lists.h
 )
 target_include_directories(mapgen-tag PRIVATE mapgen/ lib/)
@@ -239,9 +239,9 @@ olympia_enable_sanitizers(mapgen-tag)
 # ------------------------------------------------------------------------------
 # PCG32 known-answer test (lib/pcg.c, copied from olympia-g3 genesis/pcg.c)
 # ------------------------------------------------------------------------------
-# lib/pcg.c is the planned replacement RNG for regenerating the goldens; nothing
-# else links it yet, so this target is what keeps it compiled under the locked
-# flag set. Run via tests/rng/check.sh.
+# lib/pcg.c backs rnd() in every program (via lib/prng.c, issue #31); this
+# target holds the generator itself to the reference vector and to G3's genesis
+# output. Run via tests/rng/check.sh.
 add_executable(pcg-check-tag)
 target_sources(pcg-check-tag PRIVATE
     tests/rng/pcg_check.c lib/pcg.c
@@ -287,6 +287,7 @@ target_sources(olympia-tag
         lib/entity_builds.c lib/exit_views.c lib/fights.c lib/flag_ents.c
         lib/item_ents.c lib/ilist.c lib/orders.c lib/req_ents.c
         lib/roads.c lib/skill_ents.c lib/tiles.c lib/trades.c lib/wait_args.c
+        lib/prng.c lib/pcg.c
 )
 target_sources(olympia-tag
     PRIVATE
@@ -300,7 +301,7 @@ target_sources(olympia-tag
         olympia/oly.h olympia/oly3.h olympia/order.h olympia/quest.h
         olympia/relig.h olympia/sout.h olympia/stack.h olympia/swear.h
         olympia/u.h olympia/use.h olympia/z.h
-        lib/checked_alloc.h lib/lists.h
+        lib/checked_alloc.h lib/lists.h lib/pcg.h lib/prng.h
 )
 target_include_directories(olympia-tag PRIVATE olympia/ lib/)
 # Declare the C11 requirement at the target level (the project-level

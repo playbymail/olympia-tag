@@ -2,7 +2,7 @@
 ###########################################################################
 # Regression: secret-sea-route NULL deref in bridge_mountain_sup()
 #
-# Seed 'S000000000000002' (this dir's randseed) drives bridge_mountain_ports()
+# Seed 'S000000000000005' (this dir's randseed) drives bridge_mountain_ports()
 # down a path where a mountain port city's only ocean neighbour shuffles into
 # the last direction slot (dir_vector[8]). Before the fix, the off-by-one in
 # adjacent_tile_water() returned NULL for a slot-8 hit, and bridge_mountain_sup()

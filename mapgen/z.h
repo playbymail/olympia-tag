@@ -10,7 +10,7 @@
 #include <fcntl.h>
 
 #include "../lib/checked_alloc.h"	/* shared my_malloc/my_realloc/my_free seam */
-#include "../lib/rnd.h"		/* shared MD5 RNG (lib/rnd.c) */
+#include "../lib/prng.h"	/* shared PCG32 rnd() stream (lib/prng.c) */
 
 #define	TRUE	1
 #define	FALSE	0

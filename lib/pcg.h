@@ -2,10 +2,10 @@
  * lib/pcg.h -- PCG32 generator + splitmix64 seed mixing.
  *
  * Copied verbatim (code unchanged) from olympia-g3 @ 7b510b4 genesis/pcg.{c,h},
- * where it is genesis-g3's private RNG.  In TAG it is the planned replacement
- * RNG for regenerating the goldens; nothing links it yet.  The engine still uses
- * its inlined drand48/erand48 (olympia/z.c) and mapgen-tag/island-tag the MD5
- * lib/rnd.c + lib/rng.c.  Known-answer test: tests/rng/pcg_check.c.
+ * where it is genesis-g3's private RNG.  In TAG it backs rnd() in olympia-tag,
+ * mapgen-tag and island-tag through lib/prng.c (issue #31), replacing the
+ * engine's inlined drand48/erand48 and the generators' MD5 lib/rnd.c +
+ * lib/rng.c.  Known-answer test: tests/rng/pcg_check.c.
  *
  * pcg32_seed_step() derives each step's stream from the user seed alone, so
  * steps can be reordered without changing any step's outcome.
